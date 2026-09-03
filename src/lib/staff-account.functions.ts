@@ -26,6 +26,7 @@ const CreateStaffInput = z.object({
     .optional(),
   assignedGrades: z.array(z.string().max(10, "Grade value is too long")).default([]),
   classTeacherGrade: z.string().max(10, "Grade value is too long").optional(),
+  classTeacherStreamId: z.string().uuid("Class-teacher stream must be valid").optional(),
 });
 
 function getRandomItem<T>(items: T[]): T {
@@ -162,6 +163,7 @@ export const createStaffWithAccount = createServerFn({ method: "POST" })
           assigned_grade: data.assignedGrades[0] || null,
           assigned_grades: data.assignedGrades,
           class_teacher_grade: data.classTeacherGrade || null,
+          class_teacher_stream_id: data.classTeacherStreamId || null,
         },
         _role: data.role,
       },

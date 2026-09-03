@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CalendarDays, IdCard, Loader2, Mail, Phone, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { RequireSchool } from "@/components/require-school";
@@ -79,6 +79,15 @@ interface StaffRow {
   assigned_grade: CbeGrade | null;
   assigned_grades: CbeGrade[];
   class_teacher_grade: CbeGrade | null;
+  class_teacher_stream_id: string | null;
+  class_teacher_stream_name: string | null;
+}
+
+interface ClassStream {
+  id: string;
+  grade: CbeGrade;
+  name: string;
+  class_teacher_id: string | null;
 }
 
 const JOB_TITLE_OPTIONS = [
@@ -109,16 +118,28 @@ function StaffPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["staff", schoolId],
     queryFn: async () => {
-      const staffQuery = supabase
-        .from("staff")
-        .select(
-          "id, user_id, staff_number, full_name, tsc_number, job_title, employment_type, phone, email, employment_date, status, assigned_grade, assigned_grades, class_teacher_grade",
-        )
-        .eq("school_id", schoolId)
-        .eq("is_archived", false)
-        .order("full_name");
-      const { data: rows, error } = await staffQuery;
-      if (!error) return (rows ?? []) as StaffRow[];
+      const [staffQuery, streamsQuery] = await Promise.all([
+        supabase
+          .from("staff")
+          .select(
+            "id, user_id, staff_number, full_name, tsc_number, job_title, employment_type, phone, email, employment_date, status, assigned_grade, assigned_grades, class_teacher_grade",
+          )
+          .eq("school_id", schoolId)
+          .eq("is_archived", false)
+          .order("full_name"),
+        supabase.from("streams").select("id, grade, name, class_teacher_id").eq("school_id", schoolId),
+      ]);
+      const { data: rows, error } = staffQuery;
+      const streams = (streamsQuery.data ?? []) as ClassStream[];
+      if (!error)
+        return (rows ?? []).map((row) => {
+          const stream = streams.find((item) => item.class_teacher_id === row.id);
+          return {
+            ...row,
+            class_teacher_stream_id: stream?.id ?? null,
+            class_teacher_stream_name: stream?.name ?? null,
+          };
+        }) as StaffRow[];
 
       const fallback = await supabase
         .from("staff")
@@ -133,6 +154,8 @@ function StaffPage() {
         ...row,
         assigned_grades: row.assigned_grade ? [row.assigned_grade] : [],
         class_teacher_grade: null,
+        class_teacher_stream_id: null,
+        class_teacher_stream_name: null,
       })) as StaffRow[];
     },
   });
@@ -141,7 +164,7 @@ function StaffPage() {
     queryKey: ["staff-detail-drawer", schoolId, selectedStaffId],
     enabled: Boolean(selectedStaffId),
     queryFn: async () => {
-      const [member, allocations, timetable] = await Promise.all([
+      const [member, allocations, timetable, classStream] = await Promise.all([
         supabase
           .from("staff")
           .select(
@@ -168,6 +191,12 @@ function StaffPage() {
           .eq("staff_id", selectedStaffId!)
           .order("day_of_week")
           .order("period_index"),
+        supabase
+          .from("streams")
+          .select("id, grade, name")
+          .eq("school_id", schoolId)
+          .eq("class_teacher_id", selectedStaffId!)
+          .maybeSingle(),
       ]);
 
       if (member.error) throw member.error;
@@ -175,6 +204,7 @@ function StaffPage() {
         member: member.data,
         allocations: allocations.data ?? [],
         timetable: timetable.data ?? [],
+        classStream: classStream.data,
       };
     },
   });
@@ -314,6 +344,19 @@ function StaffPage() {
       header: "Assigned grade",
       className: "min-w-[150px]",
       cell: (r) => <StaffGradeChips staff={r} />,
+    },
+    {
+      key: "class_teacher",
+      header: "Class teacher",
+      className: "min-w-[150px]",
+      cell: (r) =>
+        r.class_teacher_stream_name ? (
+          <Badge variant="outline">
+            {r.class_teacher_grade ? GRADE_LABELS[r.class_teacher_grade] : "Class"} · {r.class_teacher_stream_name}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       key: "employment_type",
@@ -476,6 +519,14 @@ function StaffPage() {
                   label="National ID"
                   value={drawerMember.national_id ?? "Not captured"}
                 />
+                <FactItem
+                  label="Class teacher assignment"
+                  value={
+                    selectedStaffDetail.data?.classStream
+                      ? `${GRADE_LABELS[selectedStaffDetail.data.classStream.grade]} · ${selectedStaffDetail.data.classStream.name}`
+                      : "Not assigned"
+                  }
+                />
               </div>
             </section>
 
@@ -582,6 +633,7 @@ function StaffPage() {
               onDone={async () => {
                 setOpen(false);
                 await qc.invalidateQueries({ queryKey: ["staff", schoolId] });
+                await qc.invalidateQueries({ queryKey: ["class-teacher-streams", schoolId] });
                 await refetch();
               }}
             />
@@ -641,6 +693,7 @@ function StaffPage() {
               onDone={async () => {
                 setEditing(null);
                 await qc.invalidateQueries({ queryKey: ["staff", schoolId] });
+                await qc.invalidateQueries({ queryKey: ["class-teacher-streams", schoolId] });
                 await refetch();
               }}
             />
@@ -840,7 +893,35 @@ function EditStaffDialog({
         ? [staff.assigned_grade]
         : [],
     class_teacher_grade: staff.class_teacher_grade ?? "",
+    class_teacher_stream_id: staff.class_teacher_stream_id ?? "",
   });
+  const { data: classStreams = [] } = useQuery({
+    queryKey: ["class-teacher-streams", schoolId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("streams")
+        .select("id, grade, name, class_teacher_id")
+        .eq("school_id", schoolId)
+        .eq("is_active", true)
+        .order("grade")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as ClassStream[];
+    },
+  });
+  const availableClassStreams = classStreams.filter(
+    (stream) =>
+      stream.grade === form.class_teacher_grade &&
+      (!stream.class_teacher_id || stream.class_teacher_id === staff.id),
+  );
+  useEffect(() => {
+    if (
+      form.class_teacher_stream_id &&
+      !availableClassStreams.some((stream) => stream.id === form.class_teacher_stream_id)
+    ) {
+      set("class_teacher_stream_id", "");
+    }
+  }, [availableClassStreams, form.class_teacher_stream_id]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
@@ -874,6 +955,28 @@ function EditStaffDialog({
       if (update.error) throw update.error;
       if (!update.data?.length) {
         throw new Error("The staff record was not found or you do not have permission to update it.");
+      }
+      if (form.class_teacher_stream_id) {
+        const claim = await supabase
+          .from("streams")
+          .update({ class_teacher_id: staff.id })
+          .eq("id", form.class_teacher_stream_id)
+          .eq("school_id", schoolId)
+          .or(`class_teacher_id.is.null,class_teacher_id.eq.${staff.id}`)
+          .select("id");
+        if (claim.error) throw claim.error;
+        if (!claim.data?.length) {
+          throw new Error("That stream already has a class teacher. Choose another stream.");
+        }
+      }
+      if (staff.class_teacher_stream_id && staff.class_teacher_stream_id !== form.class_teacher_stream_id) {
+        const clear = await supabase
+          .from("streams")
+          .update({ class_teacher_id: null })
+          .eq("id", staff.class_teacher_stream_id)
+          .eq("school_id", schoolId)
+          .eq("class_teacher_id", staff.id);
+        if (clear.error) throw clear.error;
       }
       await supabase.from("audit_logs").insert({
         school_id: schoolId,
@@ -956,6 +1059,26 @@ function EditStaffDialog({
                       {GRADE_LABELS[grade]}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow label="Class-teacher stream">
+              <Select
+                value={form.class_teacher_stream_id}
+                onValueChange={(value) => set("class_teacher_stream_id", value)}
+                disabled={!form.class_teacher_grade}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={form.class_teacher_grade ? "Select a stream" : "Choose a grade first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableClassStreams.map((stream) => (
+                    <SelectItem key={stream.id} value={stream.id}>
+                      {stream.name}
+                      {stream.class_teacher_id === staff.id ? " (current)" : ""}
+                    </SelectItem>
+                  ))}
+                  {!availableClassStreams.length && <SelectItem value="none" disabled>No available streams</SelectItem>}
                 </SelectContent>
               </Select>
             </FieldRow>
@@ -1098,7 +1221,26 @@ function StaffDialog({
     employment_date: new Date().toISOString().slice(0, 10),
     assigned_grades: [] as CbeGrade[],
     class_teacher_grade: "",
+    class_teacher_stream_id: "",
   });
+
+  const { data: classStreams = [] } = useQuery({
+    queryKey: ["class-teacher-streams", schoolId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("streams")
+        .select("id, grade, name, class_teacher_id")
+        .eq("school_id", schoolId)
+        .eq("is_active", true)
+        .order("grade")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as ClassStream[];
+    },
+  });
+  const availableClassStreams = classStreams.filter(
+    (stream) => stream.grade === form.class_teacher_grade && !stream.class_teacher_id,
+  );
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -1121,6 +1263,7 @@ function StaffDialog({
           employmentDate: form.employment_date,
           assignedGrades: form.assigned_grades,
           classTeacherGrade: form.class_teacher_grade,
+          classTeacherStreamId: form.class_teacher_stream_id || undefined,
         },
       });
       await supabase.from("audit_logs").insert({
@@ -1226,6 +1369,7 @@ function StaffDialog({
               if (v === "exam_officer") {
                 set("assigned_grades", []);
                 set("class_teacher_grade", "");
+                set("class_teacher_stream_id", "");
               }
             }}
           >
@@ -1255,6 +1399,7 @@ function StaffDialog({
                       );
                       if (!checked && form.class_teacher_grade === grade) {
                         set("class_teacher_grade", "");
+                        set("class_teacher_stream_id", "");
                       }
                     }}
                   />
@@ -1265,7 +1410,8 @@ function StaffDialog({
           </FieldRow>
         )}
         {form.role !== "exam_officer" && (
-          <FieldRow label="Class-teacher grade">
+          <>
+            <FieldRow label="Class-teacher grade">
             <Select
               value={form.class_teacher_grade}
               onValueChange={(value) => set("class_teacher_grade", value)}
@@ -1281,7 +1427,27 @@ function StaffDialog({
                 ))}
               </SelectContent>
             </Select>
-          </FieldRow>
+            </FieldRow>
+            <FieldRow label="Class-teacher stream">
+            <Select
+              value={form.class_teacher_stream_id}
+              onValueChange={(value) => set("class_teacher_stream_id", value)}
+              disabled={!form.class_teacher_grade}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={form.class_teacher_grade ? "Select a stream" : "Choose a grade first"} />
+              </SelectTrigger>
+              <SelectContent>
+                {availableClassStreams.map((stream) => (
+                  <SelectItem key={stream.id} value={stream.id}>
+                    {stream.name}
+                  </SelectItem>
+                ))}
+                {!availableClassStreams.length && <SelectItem value="none" disabled>No available streams</SelectItem>}
+              </SelectContent>
+            </Select>
+            </FieldRow>
+          </>
         )}
         <FieldRow label="Employment type">
           <Select value={form.employment_type} onValueChange={(v) => set("employment_type", v)}>

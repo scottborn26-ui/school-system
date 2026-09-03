@@ -299,7 +299,13 @@ function CurriculumPage() {
     onSuccess: () => {
       toast.success("Learning area deleted.");
       setDeleteAreaId(null);
+      setViewingAreaId((current) => (current === deleteAreaId ? null : current));
+      setEditingAreaId((current) => (current === deleteAreaId ? null : current));
+      qc.setQueryData<NonNullable<typeof areas.data>>(["learning-areas", schoolId], (current) =>
+        current?.filter((area) => area.id !== deleteAreaId),
+      );
       void qc.invalidateQueries({ queryKey: ["learning-areas", schoolId] });
+      void qc.invalidateQueries({ queryKey: ["allocation-learning-areas", schoolId] });
     },
     onError: (e: Error) => {
       if (deleteAreaId) {

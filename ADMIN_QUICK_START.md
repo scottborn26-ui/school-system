@@ -26,7 +26,7 @@
 | TSC Number | TSC registration number (if applicable) |
 | National ID | Government ID number |
 | Job Title | E.g., "Mathematics Teacher" |
-| Role | Select from dropdown: `teacher`, `class_teacher`, `registrar`, or `bursar` |
+| Role | Select from dropdown: `admin`, `exam_officer`, `teacher`, or `class_teacher` |
 | Employment Type | E.g., "TSC", "BOM", "Intern", "Support" |
 | Assigned Grade | E.g., "Form 4" or "Primary 5" |
 | Employment Date | Start date in school |

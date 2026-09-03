@@ -61,3 +61,4 @@
 \ir migrations/20260903090000_add_event_image.sql
 \ir migrations/20260903170000_allow_admin_audit_log_delete.sql
 \ir migrations/20260903180000_repair_audit_log_delete_policy.sql
+\ir migrations/20260903190000_allow_school_admin_profile_updates.sql

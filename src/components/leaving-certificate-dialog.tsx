@@ -1,4 +1,6 @@
-import { FileDown, Loader2, Printer } from "lucide-react";
+import { Loader2, Printer } from "lucide-react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -50,7 +52,6 @@ export function LeavingCertificateDialog({
 }) {
   const school = useSchool();
   const [busy, setBusy] = useState(false);
-  const [lastPopup, setLastPopup] = useState<Window | null>(null);
 
   const [form, setForm] = useState({
     fullName: learner.name,
@@ -89,15 +90,50 @@ export function LeavingCertificateDialog({
         learner.photoUrl,
       );
 
-      const popup = window.open("", "_blank", "noopener,noreferrer");
-      if (!popup) {
-        toast.error("Allow pop-ups to generate the certificate.");
-        setBusy(false);
-        return;
+      const frame = document.createElement("iframe");
+      frame.title = "Certificate PDF renderer";
+      frame.style.position = "fixed";
+      frame.style.left = "-10000px";
+      frame.style.top = "0";
+      frame.style.width = "794px";
+      frame.style.height = "1123px";
+      frame.style.border = "0";
+      document.body.appendChild(frame);
+
+      try {
+        await new Promise<void>((resolve, reject) => {
+          frame.onload = () => resolve();
+          frame.onerror = () => reject(new Error("Could not prepare the certificate."));
+          frame.srcdoc = certificate;
+        });
+
+        const frameDocument = frame.contentDocument;
+        if (!frameDocument?.body) throw new Error("Could not render the certificate.");
+        await Promise.all(
+          Array.from(frameDocument.images).map((image) => {
+            if (image.complete) return Promise.resolve();
+            return new Promise<void>((resolve) => {
+              image.onload = () => resolve();
+              image.onerror = () => resolve();
+            });
+          }),
+        );
+
+        const canvas = await html2canvas(frameDocument.body, {
+          backgroundColor: "#ffffff",
+          height: 1123,
+          scale: 2,
+          useCORS: true,
+          width: 794,
+          windowHeight: 1123,
+          windowWidth: 794,
+        });
+        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, 210, 297);
+        pdf.save(`leaving-certificate-${form.admissionNumber}.pdf`);
+      } finally {
+        frame.remove();
       }
-      popup.document.write(certificate);
-      popup.document.close();
-      setLastPopup(popup);
 
       // Log action to audit logs
       await supabase.from("audit_logs").insert({
@@ -114,22 +150,7 @@ export function LeavingCertificateDialog({
       onOpenChange(false);
 
       toast.success("Leaving certificate generated successfully", {
-        description: "Your official certificate is ready in the print preview window.",
-        action: {
-          label: "View / Print Again",
-          onClick: () => {
-            if (popup && !popup.closed) {
-              popup.focus();
-              popup.print();
-            } else {
-              const newPopup = window.open("", "_blank", "noopener,noreferrer");
-              if (newPopup) {
-                newPopup.document.write(certificate);
-                newPopup.document.close();
-              }
-            }
-          },
-        },
+        description: "The PDF certificate was downloaded and is ready to print.",
       });
     } catch (err: unknown) {
       setBusy(false);
@@ -277,7 +298,7 @@ export function LeavingCertificateDialog({
             ) : (
               <Printer className="mr-2 size-4" />
             )}
-            {busy ? "Preparing PDF…" : "Generate PDF"}
+            {busy ? "Generating PDF…" : "Generate PDF"}
           </Button>
         </DialogFooter>
       </DialogContent>

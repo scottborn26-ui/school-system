@@ -4598,3 +4598,51 @@ body * {
 .dark [class*="bg-100"]:not([class*="dark:bg-"]) {
   background-color: var(--muted);
 }
+
+.calendar-event-form {
+  border-color: color-mix(in oklab, var(--color-primary) 18%, var(--color-border));
+  background: linear-gradient(135deg, color-mix(in oklab, var(--color-primary) 5%, var(--card)), var(--card));
+}
+
+.calendar-event-field > label {
+  color: var(--foreground);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.calendar-event-form input,
+.calendar-event-form button[role="combobox"] {
+  min-height: 2.65rem;
+  border-color: var(--border);
+  background: var(--background);
+}
+
+.calendar-event-picture input[type="file"] {
+  padding: 0.42rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.calendar-event-picture input[type="file"]::file-selector-button {
+  margin-right: 0.5rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: var(--primary);
+  padding: 0.35rem 0.6rem;
+  color: var(--primary-foreground);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendar-event-submit {
+  min-height: 2.65rem;
+  box-shadow: 0 6px 14px color-mix(in oklab, var(--color-primary) 20%, transparent);
+}
+
+@media (max-width: 767px) {
+  .calendar-event-submit {
+    width: 100%;
+  }
+}

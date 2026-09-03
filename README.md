@@ -48,9 +48,9 @@ Subject Teacher: access is strictly limited to the grades, streams, and learning
 
 Class Teacher: access limited to assigned homeroom classes only — attendance, authorized results, class-teacher comments, progress review, class reports, limited guardian contacts. Being a class teacher never grants mark-entry rights outside the teacher’s own learning-area allocations.
 
-Admissions Officer/Registrar: applications, admissions, documents, enrollment; no marks or finance access unless separately granted.
+School Administrator: applications, admissions, documents, enrollment and school administration.
 
-Finance Officer/Bursar: fees, invoices, receipts, payments, balances, bursaries, statements, and finance reports; cannot edit academic marks.
+Finance administration: fees, invoices, receipts, payments, balances, bursaries, statements and finance reports; cannot edit academic marks.
 
 Parent/Guardian: view-only access to their own linked learners’ profile, attendance, published reports, fee statements, receipts, timetable, and notices.
 

@@ -83,7 +83,7 @@ const NAV_GROUPS: NavGroup[] = [
       "/admissions",
     ],
   },
-  { label: "People", paths: ["/learners", "/staff"] },
+  { label: "People", paths: ["/learners", "/parents", "/staff"] },
   {
     label: "Academics",
     paths: [
@@ -124,6 +124,12 @@ const NAV: NavItem[] = [
     label: "Learners",
     icon: faGraduationCap,
     roles: ["admin", "principal", "deputy", "teacher", "class_teacher"],
+  },
+  {
+    to: "/parents",
+    label: "Parents",
+    icon: faUsers,
+    roles: ["admin", "principal", "deputy"],
   },
   {
     to: "/transition",
@@ -422,6 +428,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {sidebar}
             </SheetContent>
           </Sheet>
+
+          <Link to="/dashboard" className="flex shrink-0 items-center gap-2" aria-label="School dashboard">
+            <SchoolLogo
+              logoUrl={school.school?.logo_url}
+              schoolName={school.school?.name}
+              shortName={school.school?.short_name}
+              className="size-9"
+            />
+            <span className="hidden max-w-44 truncate text-sm font-semibold text-foreground lg:block">
+              {school.school?.short_name || school.school?.name || "School"}
+            </span>
+          </Link>
 
           <div className="relative hidden min-w-[220px] flex-1 sm:block">
             <FontAwesomeIcon

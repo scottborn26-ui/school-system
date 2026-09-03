@@ -109,7 +109,7 @@ Only a principal or deputy can create staff accounts.
 2. Select **Add Staff Member**.
 3. Enter the staff member's full name, email and email confirmation.
 4. Add phone, TSC number, national ID, job title, department, employment type, employment date and role.
-5. Select the appropriate role, such as teacher, class teacher, registrar or bursar.
+5. Select the appropriate role, such as admin, exam officer, teacher or class teacher.
 6. Select **Add Staff Member**.
 
 The system validates the email, checks for duplicates, creates the staff record and account, generates temporary credentials, records the operation in the audit log and attempts to send the invitation email.
@@ -157,7 +157,7 @@ Changing these settings can affect admissions, assessments, timetables and repor
 
 ## 7. Admit and Enroll Learners
 
-Admissions are available to the principal, deputy and registrar.
+Admissions are available to the admin, principal and deputy.
 
 1. Open **Admissions**.
 2. Start a new application.
@@ -308,7 +308,7 @@ Published reports are versioned snapshots. Print or export the published version
 
 ## 13. Fees and Finance
 
-Finance is available to the bursar, principal and permitted deputy users.
+Finance is available to the admin, principal and permitted deputy users.
 
 1. Open **Fees & Finance**.
 2. Create fee structures and fee items for the academic year, term, grade, stream or boarding category.
@@ -330,8 +330,8 @@ Teachers do not receive finance access unless explicitly granted.
 - **Deputy**: delegated academic and administrative management; finance depends on explicit permission.
 - **Teacher**: assigned grades, streams and learning areas only.
 - **Class teacher**: assigned homeroom only, plus permitted attendance and class review functions.
-- **Registrar**: admissions, enrollment, learner documents and lifecycle administration.
-- **Bursar**: fees, invoices, payments, receipts, ledgers and finance reports.
+- **Admin**: school administration, admissions, fees, invoices, payments and reports.
+- **Exam Officer**: assessment administration and marks approvals.
 - **Parent/guardian**: view-only access to linked learners, published reports, statements, attendance, timetable and notices where portal access is enabled.
 - **Student**: view-only access to their own permitted profile, timetable, attendance, reports and feedback where enabled.
 - **Super administrator**: platform school administration and platform audit functions; private learner data requires explicit, audited support access.

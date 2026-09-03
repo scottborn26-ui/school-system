@@ -58,7 +58,7 @@ The following components have been implemented and enhanced:
 **Create Staff Dialog:**
 - Full form with all required fields
 - Email confirmation field to prevent typos
-- Role selection (teacher, class_teacher, registrar, bursar)
+- Role selection (admin, exam_officer, teacher, class_teacher)
 - Grade assignment option
 - Employment type selection
 - Professional error messages with field-specific guidance

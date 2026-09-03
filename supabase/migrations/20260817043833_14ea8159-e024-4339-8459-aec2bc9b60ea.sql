@@ -357,10 +357,10 @@ ALTER TABLE public.fee_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "fi_select" ON public.fee_items FOR SELECT TO authenticated
   USING (public.is_school_member(school_id) OR public.is_super_admin());
 CREATE POLICY "fi_insert" ON public.fee_items FOR INSERT TO authenticated
-  WITH CHECK (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin());
+  WITH CHECK (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin());
 CREATE POLICY "fi_update" ON public.fee_items FOR UPDATE TO authenticated
-  USING (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin())
-  WITH CHECK (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin());
+  USING (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin())
+  WITH CHECK (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin());
 CREATE TRIGGER trg_fee_items_updated BEFORE UPDATE ON public.fee_items
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
@@ -387,10 +387,10 @@ ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "inv_select" ON public.invoices FOR SELECT TO authenticated
   USING (public.is_school_member(school_id) OR public.is_super_admin());
 CREATE POLICY "inv_insert" ON public.invoices FOR INSERT TO authenticated
-  WITH CHECK (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin());
+  WITH CHECK (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin());
 CREATE POLICY "inv_update" ON public.invoices FOR UPDATE TO authenticated
-  USING (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin())
-  WITH CHECK (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin());
+  USING (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin())
+  WITH CHECK (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin());
 CREATE TRIGGER trg_invoices_updated BEFORE UPDATE ON public.invoices
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
@@ -409,10 +409,10 @@ ALTER TABLE public.invoice_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "ii_select" ON public.invoice_items FOR SELECT TO authenticated
   USING (public.is_school_member(school_id) OR public.is_super_admin());
 CREATE POLICY "ii_insert" ON public.invoice_items FOR INSERT TO authenticated
-  WITH CHECK (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin());
+  WITH CHECK (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin());
 CREATE POLICY "ii_update" ON public.invoice_items FOR UPDATE TO authenticated
-  USING (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin())
-  WITH CHECK (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin());
+  USING (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin())
+  WITH CHECK (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin());
 
 CREATE TABLE public.payments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -439,10 +439,10 @@ ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "pay_select" ON public.payments FOR SELECT TO authenticated
   USING (public.is_school_member(school_id) OR public.is_super_admin());
 CREATE POLICY "pay_insert" ON public.payments FOR INSERT TO authenticated
-  WITH CHECK (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin());
+  WITH CHECK (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin());
 CREATE POLICY "pay_update" ON public.payments FOR UPDATE TO authenticated
-  USING (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin())
-  WITH CHECK (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin());
+  USING (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin())
+  WITH CHECK (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin());
 CREATE TRIGGER trg_payments_updated BEFORE UPDATE ON public.payments
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
@@ -465,7 +465,7 @@ ALTER TABLE public.ledger_entries ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "le_select" ON public.ledger_entries FOR SELECT TO authenticated
   USING (public.is_school_member(school_id) OR public.is_super_admin());
 CREATE POLICY "le_insert" ON public.ledger_entries FOR INSERT TO authenticated
-  WITH CHECK (public.has_school_role(school_id, ARRAY['principal','deputy','bursar']::public.app_role[]) OR public.is_super_admin());
+  WITH CHECK (public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[]) OR public.is_super_admin());
 
 -- Invoices and payments post to the ledger automatically
 CREATE OR REPLACE FUNCTION public.post_invoice_ledger()

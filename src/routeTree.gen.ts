@@ -36,6 +36,7 @@ import { Route as AuthenticatedMyAttendanceRouteImport } from './routes/_authent
 import { Route as AuthenticatedMyTeachingRouteImport } from './routes/_authenticated/my-teaching'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedParentsRouteImport } from './routes/_authenticated/parents'
 import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPromotionsRouteImport } from './routes/_authenticated/promotions'
@@ -193,6 +194,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedParentsRoute = AuthenticatedParentsRouteImport.update({
+  id: '/parents',
+  path: '/parents',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPlatformRoute = AuthenticatedPlatformRouteImport.update({
   id: '/platform',
   path: '/platform',
@@ -290,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/my-teaching': typeof AuthenticatedMyTeachingRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/parents': typeof AuthenticatedParentsRoute
   '/platform': typeof AuthenticatedPlatformRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/promotions': typeof AuthenticatedPromotionsRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByTo {
   '/my-teaching': typeof AuthenticatedMyTeachingRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/parents': typeof AuthenticatedParentsRoute
   '/platform': typeof AuthenticatedPlatformRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/promotions': typeof AuthenticatedPromotionsRoute
@@ -374,6 +382,7 @@ export interface FileRoutesById {
   '/_authenticated/my-teaching': typeof AuthenticatedMyTeachingRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/parents': typeof AuthenticatedParentsRoute
   '/_authenticated/platform': typeof AuthenticatedPlatformRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/promotions': typeof AuthenticatedPromotionsRoute
@@ -417,6 +426,7 @@ export interface FileRouteTypes {
     | '/my-teaching'
     | '/notifications'
     | '/onboarding'
+    | '/parents'
     | '/platform'
     | '/profile'
     | '/promotions'
@@ -458,6 +468,7 @@ export interface FileRouteTypes {
     | '/my-teaching'
     | '/notifications'
     | '/onboarding'
+    | '/parents'
     | '/platform'
     | '/profile'
     | '/promotions'
@@ -500,6 +511,7 @@ export interface FileRouteTypes {
     | '/_authenticated/my-teaching'
     | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
+    | '/_authenticated/parents'
     | '/_authenticated/platform'
     | '/_authenticated/profile'
     | '/_authenticated/promotions'
@@ -714,6 +726,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/parents': {
+      id: '/_authenticated/parents'
+      path: '/parents'
+      fullPath: '/parents'
+      preLoaderRoute: typeof AuthenticatedParentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/platform': {
       id: '/_authenticated/platform'
       path: '/platform'
@@ -844,6 +863,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMyTeachingRoute: typeof AuthenticatedMyTeachingRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedParentsRoute: typeof AuthenticatedParentsRoute
   AuthenticatedPlatformRoute: typeof AuthenticatedPlatformRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedPromotionsRoute: typeof AuthenticatedPromotionsRoute
@@ -881,6 +901,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMyTeachingRoute: AuthenticatedMyTeachingRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedParentsRoute: AuthenticatedParentsRoute,
   AuthenticatedPlatformRoute: AuthenticatedPlatformRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedPromotionsRoute: AuthenticatedPromotionsRoute,

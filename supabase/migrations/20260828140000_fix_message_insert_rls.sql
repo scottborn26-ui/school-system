@@ -52,7 +52,7 @@ WITH CHECK (
       school_id,
       ARRAY[
         'admin', 'principal', 'deputy', 'exam_officer',
-        'teacher', 'class_teacher', 'registrar', 'bursar',
+        'admin', 'exam_officer', 'teacher', 'class_teacher',
         'parent', 'student'
       ]::public.app_role[]
     )

@@ -52,7 +52,7 @@ export interface SchoolContextValue {
   termId: string | null;
   setTermId: (id: string) => void;
   can: (...roles: AppRole[]) => boolean;
-  refetch: () => void;
+  refetch: () => Promise<unknown>;
 }
 
 export interface SchoolRow {
@@ -198,7 +198,7 @@ export function SchoolProvider({ children, user }: { children: ReactNode; user: 
       termId,
       setTermId,
       can: (...allowed: AppRole[]) => roles.some((r) => allowed.includes(r)),
-      refetch: () => void refetch(),
+      refetch: () => refetch(),
     };
   }, [data, isLoading, activeRoleState, yearOverride, termOverride, refetch]);
 

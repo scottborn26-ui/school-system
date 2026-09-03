@@ -1,5 +1,5 @@
 -- ENUMS
-CREATE TYPE public.app_role AS ENUM ('super_admin','principal','deputy','teacher','class_teacher','registrar','bursar','parent','student');
+CREATE TYPE public.app_role AS ENUM ('super_admin','admin','exam_officer','principal','deputy','teacher','class_teacher','parent','student');
 CREATE TYPE public.cbe_level AS ENUM ('pre_primary','lower_primary','upper_primary','junior_school','senior_school');
 CREATE TYPE public.cbe_grade AS ENUM ('PP1','PP2','G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12');
 CREATE TYPE public.learner_status AS ENUM ('applicant','admitted','enrolled','active','promoted','repeated','transferred_out','withdrawn','completed','alumni','archived');

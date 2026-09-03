@@ -73,7 +73,7 @@ export const Route = createFileRoute("/_authenticated/finance")({
     ],
   }),
   component: () => (
-    <RequireSchool roles={["principal", "deputy", "super_admin"]}>
+    <RequireSchool roles={["admin", "principal", "deputy", "super_admin"]}>
       <FinancePage />
     </RequireSchool>
   ),
@@ -161,13 +161,12 @@ function FinancePage() {
     learners.data?.find((x) => x.id === id)?.admission_number ?? "";
 
   const totals = (() => {
-    const entries = ledger.data ?? [];
-    const billed = entries
-      .filter((e) => e.entry_type === "debit")
-      .reduce((s, e) => s + Number(e.amount), 0);
-    const received = entries
-      .filter((e) => e.entry_type === "credit")
-      .reduce((s, e) => s + Number(e.amount), 0);
+    const billed = (invoices.data ?? [])
+      .filter((invoice) => invoice.status !== "void")
+      .reduce((sum, invoice) => sum + Number(invoice.total || 0), 0);
+    const received = (payments.data ?? [])
+      .filter((payment) => !payment.is_reversed)
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
     return { billed, received, outstanding: billed - received };
   })();
 
@@ -360,12 +359,16 @@ function FinancePage() {
 
   const deleteInvoice = useMutation({
     mutationFn: async (invoiceId: string) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("invoices")
         .delete()
         .eq("id", invoiceId)
-        .eq("school_id", schoolId);
+        .eq("school_id", schoolId)
+        .select("id");
       if (error) throw error;
+      if (!data?.length) {
+        throw new Error("Invoice was not deleted. Check your Finance permissions and school assignment.");
+      }
     },
     onSuccess: () => {
       toast.success("Invoice deleted.");
@@ -448,6 +451,8 @@ function FinancePage() {
       setReceipt(null);
       void qc.invalidateQueries({ queryKey: ["payments", schoolId] });
       void qc.invalidateQueries({ queryKey: ["ledger", schoolId] });
+      void qc.invalidateQueries({ queryKey: ["dashboard-fees", schoolId] });
+      void qc.invalidateQueries({ queryKey: ["dashboard", schoolId] });
     },
     onError: (e: Error) => toast.error("Payment could not be deleted.", { description: e.message }),
   });
@@ -493,18 +498,23 @@ function FinancePage() {
         _prefix: "RCT",
       });
       if (numErr) throw numErr;
-      const { error } = await supabase.from("payments").insert({
-        school_id: schoolId,
-        learner_id: payLearner,
-        term_id: school.termId,
-        receipt_number: number as string,
-        amount,
-        method: payMethod,
-        reference: payRef.trim() || null,
-        payer_name: payer.trim() || null,
-        recorded_by: school.userId,
-      });
+      const { data: payment, error } = await supabase
+        .from("payments")
+        .insert({
+          school_id: schoolId,
+          learner_id: payLearner,
+          term_id: school.termId,
+          receipt_number: number as string,
+          amount,
+          method: payMethod,
+          reference: payRef.trim() || null,
+          payer_name: payer.trim() || null,
+          recorded_by: school.userId,
+        })
+        .select("id")
+        .single();
       if (error) throw error;
+      if (!payment?.id) throw new Error("The payment was not saved.");
       return { number: number as string, amount };
     },
     onSuccess: ({ number, amount }) => {
@@ -522,6 +532,8 @@ function FinancePage() {
       setPayer("");
       void qc.invalidateQueries({ queryKey: ["payments", schoolId] });
       void qc.invalidateQueries({ queryKey: ["ledger", schoolId] });
+      void qc.invalidateQueries({ queryKey: ["dashboard-fees", schoolId] });
+      void qc.invalidateQueries({ queryKey: ["dashboard", schoolId] });
     },
     onError: (e: Error) => toast.error("Payment was not recorded.", { description: e.message }),
   });
@@ -577,6 +589,8 @@ function FinancePage() {
     }
     void qc.invalidateQueries({ queryKey: ["payments", schoolId] });
     void qc.invalidateQueries({ queryKey: ["ledger", schoolId] });
+    void qc.invalidateQueries({ queryKey: ["dashboard-fees", schoolId] });
+    void qc.invalidateQueries({ queryKey: ["dashboard", schoolId] });
     if (ok > 0) toast.success(`${ok} payment${ok === 1 ? "" : "s"} imported successfully.`);
     if (problems.length > 0)
       toast.error(`${problems.length} row(s) skipped.`, {

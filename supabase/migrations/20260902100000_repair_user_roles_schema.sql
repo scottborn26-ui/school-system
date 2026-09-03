@@ -14,8 +14,6 @@ BEGIN
       'teacher',
       'class_teacher',
       'exam_officer',
-      'registrar',
-      'bursar',
       'parent',
       'student'
     );

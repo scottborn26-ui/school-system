@@ -153,8 +153,10 @@ function SettingsPage() {
               schoolId={schoolId}
               profile={data?.profile}
               onSaved={() => {
-                void qc.invalidateQueries({ queryKey: ["school-settings", schoolId] });
-                school.refetch();
+                return Promise.all([
+                  qc.invalidateQueries({ queryKey: ["school-settings", schoolId] }),
+                  school.refetch(),
+                ]).then(() => undefined);
               }}
             />
           </TabsContent>
@@ -320,7 +322,7 @@ function ProfileTab({
         if (uploadError) throw uploadError;
         logoUrl = supabase.storage.from("school-assets").getPublicUrl(path).data.publicUrl;
       }
-      const { error } = await supabase
+      const { data: updatedSchool, error } = await supabase
         .from("schools")
         .update({
           name: form.name.trim(),
@@ -348,14 +350,29 @@ function ProfileTab({
           admission_number_format: form.admission_number_format.trim() || "ADM-{YYYY}-{SEQ:4}",
           logo_url: logoUrl || null,
         })
-        .eq("id", schoolId);
+        .eq("id", schoolId)
+        .select("logo_url")
+        .maybeSingle();
       if (error) throw error;
+      if (!updatedSchool) throw new Error("school-profile-not-updated");
+      if (logoUrl && updatedSchool.logo_url !== logoUrl) throw new Error("logo-url-not-persisted");
+      return updatedSchool.logo_url ?? "";
     },
-    onSuccess: () => {
+    onSuccess: async (logoUrl) => {
+      setForm((current) => ({ ...current, logo_url: logoUrl }));
+      setLogoPreview(logoUrl);
+      setLogoFile(null);
       toast.success("School profile updated successfully.");
-      onSaved();
+      await onSaved();
     },
-    onError: () => toast.error("The school profile could not be updated."),
+    onError: (error: Error) =>
+      toast.error(
+        error.message === "school-profile-not-updated"
+          ? "The school profile could not be updated for this account."
+          : error.message === "logo-url-not-persisted"
+            ? "The logo upload completed, but its URL was not saved."
+          : "The school profile could not be updated.",
+      ),
   });
 
   function submit() {
@@ -1127,8 +1144,8 @@ function CalendarTab({
               <CalendarRange />
             </span>
           </div>
-          <div className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1.4fr_0.8fr_1fr_1fr_1.2fr_auto] md:items-end">
-            <div className="space-y-1.5">
+          <div className="calendar-event-form grid gap-3 rounded-xl border p-4 md:grid-cols-[1.4fr_0.8fr_1fr_1fr_1.2fr_auto] md:items-end">
+            <div className="calendar-event-field space-y-1.5">
               <Label className="text-xs">Event title</Label>
               <Input
                 value={eventForm.title}
@@ -1136,7 +1153,7 @@ function CalendarTab({
                 placeholder="e.g. Parents' meeting"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="calendar-event-field space-y-1.5">
               <Label className="text-xs">Type</Label>
               <Select
                 value={eventForm.event_type}
@@ -1154,7 +1171,7 @@ function CalendarTab({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className="calendar-event-field space-y-1.5">
               <Label className="text-xs">Starts</Label>
               <Input
                 type="date"
@@ -1162,7 +1179,7 @@ function CalendarTab({
                 onChange={(e) => setEventForm((f) => ({ ...f, start_date: e.target.value }))}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="calendar-event-field space-y-1.5">
               <Label className="text-xs">Ends (optional)</Label>
               <Input
                 type="date"
@@ -1170,7 +1187,7 @@ function CalendarTab({
                 onChange={(e) => setEventForm((f) => ({ ...f, end_date: e.target.value }))}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="calendar-event-field calendar-event-picture space-y-1.5">
               <Label className="text-xs">Picture (optional)</Label>
               <Input
                 type="file"
@@ -1178,7 +1195,7 @@ function CalendarTab({
                 onChange={(e) => setEventForm((f) => ({ ...f, image: e.target.files?.[0] ?? null }))}
               />
             </div>
-            <Button onClick={() => eventMutation.mutate()} disabled={eventMutation.isPending}>
+            <Button className="calendar-event-submit" onClick={() => eventMutation.mutate()} disabled={eventMutation.isPending}>
               <Plus className="mr-2 size-4" /> Add event
             </Button>
           </div>

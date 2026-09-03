@@ -233,17 +233,17 @@ DROP POLICY IF EXISTS learners_member_insert ON public.learners;
 CREATE POLICY learners_admin_insert ON public.learners FOR INSERT TO authenticated
 WITH CHECK (
   public.is_super_admin()
-  OR public.has_school_role(school_id, ARRAY['principal','deputy','registrar']::public.app_role[])
+  OR public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[])
 );
 DROP POLICY IF EXISTS learners_admin_update ON public.learners;
 CREATE POLICY learners_admin_update ON public.learners FOR UPDATE TO authenticated
 USING (
   public.is_super_admin()
-  OR public.has_school_role(school_id, ARRAY['principal','deputy','registrar']::public.app_role[])
+  OR public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[])
 )
 WITH CHECK (
   public.is_super_admin()
-  OR public.has_school_role(school_id, ARRAY['principal','deputy','registrar']::public.app_role[])
+  OR public.has_school_role(school_id, ARRAY['admin','principal','deputy']::public.app_role[])
 );
 
 -- Assessment creation/editing is subject- and stream-scoped for teachers.

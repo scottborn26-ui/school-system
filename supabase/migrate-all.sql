@@ -1,0 +1,63 @@
+-- Standalone migration runner for the Shan Scott Technologies Supabase project.
+-- Run from the repository root with psql, or use Supabase CLI after linking the project.
+-- The files are included in timestamp order and stop on the first error.
+
+\set ON_ERROR_STOP on
+
+\ir migrations/20260816220608_28469018-36b3-42aa-b20a-822c72435aca.sql
+\ir migrations/20260817043833_14ea8159-e024-4339-8459-aec2bc9b60ea.sql
+\ir migrations/20260817043849_9eecb877-ddb3-493e-bec3-329de174754c.sql
+\ir migrations/20260818214655_6fbcc6cd-a5d4-46ec-8f0c-dafc47a0f75b.sql
+\ir migrations/20260819090000_add_suspended_learner_status.sql
+\ir migrations/20260819100000_add_school_logo_storage.sql
+\ir migrations/20260819120000_student_lifecycle_management.sql
+\ir migrations/20260819130000_attendance_register.sql
+\ir migrations/20260819140000_teacher_accounts_and_learner_scope.sql
+\ir migrations/20260819150000_allow_reused_teacher_emails.sql
+\ir migrations/20260819160000_teacher_account_repair.sql
+\ir migrations/20260819170000_teacher_rbac_scope.sql
+\ir migrations/20260819180000_fix_staff_rls.sql
+\ir migrations/20260819190000_permanent_learner_delete.sql
+\ir migrations/20260819200000_academic_calendar_events.sql
+\ir migrations/20260819210000_atomic_staff_accounts.sql
+\ir migrations/20260820100000_staff_login_lifecycle.sql
+\ir migrations/20260820110000_fix_staff_account_actor.sql
+\ir migrations/20260820120000_fix_staff_account_membership_conflict.sql
+\ir migrations/20260820130000_fix_staff_account_conflict_target.sql
+\ir migrations/20260820140000_strict_teacher_scope.sql
+\ir migrations/20260821100000_auto_staff_number.sql
+\ir migrations/20260821110000_staff_credential_delivery.sql
+\ir migrations/20260821120000_grade_offerings_admin_rls.sql
+\ir migrations/20260821150000_grade_scoped_assessments.sql
+\ir migrations/20260821160000_super_admin_platform_control.sql
+\ir migrations/20260822100000_senior_school_pathways.sql
+\ir migrations/20260822110000_fix_senior_school_tenant_trigger.sql
+\ir migrations/20260824100000_senior_school_combinations_and_placement.sql
+\ir migrations/20260824110000_complete_permanent_learner_delete.sql
+\ir migrations/20260824110000_fix_updated_at_trigger.sql
+\ir migrations/20260824120000_add_updated_at_to_triggered_tables.sql
+\ir migrations/20260824130000_allow_permanent_learner_delete.sql
+\ir migrations/20260825090000_curriculum_leadership_allowlist.sql
+\ir migrations/20260824110000_complete_permanent_learner_delete.sql
+\ir migrations/20260825100000_multiple_teacher_grades.sql
+\ir migrations/20260825100000_fix_create_school_grade_enum_cast.sql
+\ir migrations/20260825110000_permanent_staff_delete.sql
+\ir migrations/20260825120000_fix_staff_delete_authorization.sql
+\ir migrations/20260828000000_allow_payment_deletion.sql
+\ir migrations/20260828010000_allow_invoice_and_fee_deletion.sql
+\ir migrations/20260828100000_fix_senior_transition_assignment_and_history.sql
+\ir migrations/20260828120000_message_center_notifications.sql
+\ir migrations/20260828130000_domain_notification_triggers.sql
+\ir migrations/20260828140000_fix_message_insert_rls.sql
+\ir migrations/20260828150000_repair_messages_insert_rls.sql
+\ir migrations/20260828160000_staff_attendance.sql
+\ir migrations/20260829000000_fix_ambiguous_assignment_id_in_senior_transition.sql
+\ir migrations/20260829100000_repair_staff_attendance_clocking.sql
+\ir migrations/20260829110000_staff_attendance_schedule.sql
+\ir migrations/20260829120000_staff_attendance_admin_policies.sql
+\ir migrations/20260829130000_repair_message_sender_rls.sql
+\ir migrations/20260902100000_repair_user_roles_schema.sql
+\ir migrations/20260902110000_repair_staff_visibility.sql
+\ir migrations/20260903090000_add_event_image.sql
+\ir migrations/20260903170000_allow_admin_audit_log_delete.sql
+\ir migrations/20260903180000_repair_audit_log_delete_policy.sql

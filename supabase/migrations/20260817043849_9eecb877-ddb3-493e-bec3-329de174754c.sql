@@ -1,0 +1,14 @@
+REVOKE EXECUTE ON FUNCTION public.next_counter(uuid, text, text) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.learner_balance(uuid) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.next_admission_number(uuid) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.has_school_role(uuid, public.app_role[]) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.is_school_admin(uuid) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.is_school_member(uuid) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.is_super_admin() FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.next_counter(uuid, text, text) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.learner_balance(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.next_admission_number(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.has_school_role(uuid, public.app_role[]) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.is_school_admin(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.is_school_member(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.is_super_admin() TO authenticated, service_role;

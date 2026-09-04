@@ -230,7 +230,7 @@ const NAV: NavItem[] = [
     to: "/report-card-approvals",
     label: "Approve Report Cards",
     icon: faClipboardCheck,
-    roles: ["principal", "deputy", "super_admin"],
+    roles: ["exam_officer", "principal", "deputy", "super_admin"],
   },
   {
     to: "/student-positions",
@@ -263,7 +263,7 @@ const NAV: NavItem[] = [
     roles: ["principal", "deputy"],
   },
   { to: "/settings", label: "School Settings", icon: faSliders, roles: ["principal", "deputy"] },
-  { to: "/audit", label: "Audit Logs", icon: faShieldHalved, roles: ["principal", "super_admin"] },
+  { to: "/audit", label: "Audit Logs", icon: faShieldHalved, roles: ["exam_officer", "principal", "super_admin"] },
   { to: "/platform", label: "Platform Control", icon: faShieldHalved, roles: ["super_admin"] },
 ];
 
@@ -291,6 +291,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           "/assessments",
           "/reports",
           "/report-management",
+          "/report-card-approvals",
+          "/student-positions",
+          "/performance-summary",
         ].includes(item.to),
     )
     .map((item) => {
@@ -303,6 +306,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           "/assessments": "Candidates & Exams",
           "/reports": "Reports",
           "/report-management": "Published Results",
+          "/report-card-approvals": "Approve Report Cards",
+          "/student-positions": "Student Positions",
+          "/performance-summary": "Mean Score Summary",
         };
         return labels[item.to] ? { ...item, label: labels[item.to] } : item;
       }

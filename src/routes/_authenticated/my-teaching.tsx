@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpenCheck } from "lucide-react";
+import { BookOpenCheck, CalendarDays, Clock3, Users } from "lucide-react";
 import { PageHeader } from "@/components/app-shell";
 import { RequireSchool } from "@/components/require-school";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,6 +90,10 @@ function MyTeachingPage() {
 
   const assignments = teaching.data?.assignments ?? [];
   const timetable = teaching.data?.timetable ?? [];
+  const timetableByDay = dayNames.map((day, index) => ({
+    day,
+    entries: timetable.filter((entry) => entry.day_of_week === index + 1),
+  }));
 
   return (
     <div className="space-y-6">
@@ -107,17 +111,26 @@ function MyTeachingPage() {
         {assignments.length ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {assignments.map((assignment) => (
-              <Card key={assignment.id}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">
+              <Card key={assignment.id} className="overflow-hidden border-l-4 border-l-primary shadow-sm">
+                <CardHeader className="gap-3 bg-muted/25 pb-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <CardTitle className="text-base leading-tight">
                     {assignment.learning_areas?.name ?? "Learning area"}
-                  </CardTitle>
+                    </CardTitle>
+                    <Badge variant="secondary" className="shrink-0">
+                      {assignment.periods_per_week} / week
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Users className="size-4 text-primary" />
+                    <span>
+                      {assignment.streams?.grade ? GRADE_LABELS[assignment.streams.grade] : "Class"} · {assignment.streams?.name ?? "Stream"}
+                    </span>
+                  </div>
                 </CardHeader>
-                <CardContent className="flex items-center justify-between gap-3 text-sm">
-                  <span>
-                    {assignment.streams?.grade ? GRADE_LABELS[assignment.streams.grade] : "Class"} · {assignment.streams?.name ?? "Stream"}
-                  </span>
-                  <Badge variant="secondary">{assignment.periods_per_week} periods/week</Badge>
+                <CardContent className="flex items-center gap-2 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <Clock3 className="size-4" /> Teaching load
+                  <span className="ml-auto normal-case tracking-normal text-foreground">{assignment.periods_per_week} periods per week</span>
                 </CardContent>
               </Card>
             ))}
@@ -137,21 +150,34 @@ function MyTeachingPage() {
           <p className="text-sm text-muted-foreground">Lessons currently available for attendance and teaching.</p>
         </div>
         {timetable.length ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {timetable.map((entry) => (
-              <Card key={entry.id}>
-                <CardContent className="flex items-center justify-between gap-3 py-4 text-sm">
-                  <div>
-                    <div className="font-medium">
-                      {entry.learning_areas?.name ?? "Learning area"} · {entry.streams?.name ?? "Class"}
-                    </div>
-                    <div className="text-muted-foreground">
-                      {dayNames[entry.day_of_week - 1] ?? `Day ${entry.day_of_week}`} · Period {entry.period_index}
-                    </div>
-                  </div>
-                  <Badge>Published</Badge>
-                </CardContent>
-              </Card>
+          <div className="space-y-5">
+            {timetableByDay.filter((day) => day.entries.length > 0).map((day) => (
+              <div key={day.day} className="space-y-2">
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <CalendarDays className="size-4 text-primary" />
+                  <h3 className="font-semibold">{day.day}</h3>
+                  <Badge variant="outline" className="ml-auto">{day.entries.length} {day.entries.length === 1 ? "lesson" : "lessons"}</Badge>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {day.entries.map((entry) => (
+                    <Card key={entry.id} className="border-l-4 border-l-emerald-500 shadow-sm">
+                      <CardContent className="flex items-center justify-between gap-3 py-4 text-sm">
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold">
+                            {entry.learning_areas?.name ?? "Learning area"}
+                          </div>
+                          <div className="mt-1 flex items-center gap-1.5 text-muted-foreground">
+                            <Users className="size-3.5" /> {entry.streams?.name ?? "Class"}
+                          </div>
+                        </div>
+                        <Badge className="shrink-0 gap-1">
+                          <Clock3 className="size-3" /> P{entry.period_index}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         ) : (

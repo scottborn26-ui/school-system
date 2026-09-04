@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/audit")({
     ],
   }),
   component: () => (
-    <RequireSchool roles={["principal", "super_admin"]}>
+    <RequireSchool roles={["exam_officer", "principal", "super_admin"]}>
       <AuditPage />
     </RequireSchool>
   ),

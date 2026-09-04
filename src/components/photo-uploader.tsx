@@ -14,7 +14,7 @@ import {
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const MAX_BYTES = 2 * 1024 * 1024;
+const MAX_BYTES = 5 * 1024 * 1024;
 
 export function PhotoUploader({
   value,
@@ -45,7 +45,7 @@ export function PhotoUploader({
       return;
     }
     if (file.size > MAX_BYTES) {
-      toast.error("Photo must be 2MB or smaller.");
+      toast.error("Photo must be 5MB or smaller.");
       return;
     }
     const reader = new FileReader();
@@ -158,7 +158,7 @@ export function PhotoUploader({
         </div>
 
         <p className="text-[0.7rem] text-muted-foreground">
-          Drag & drop or browse (JPG/PNG, max 2MB)
+          Drag & drop or browse (JPG/PNG, max 5MB)
         </p>
       </div>
       <Dialog

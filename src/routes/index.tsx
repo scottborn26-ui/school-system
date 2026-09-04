@@ -656,6 +656,7 @@ function Landing() {
               {quickLinks.map((item) => (
                 <li key={item.label}><a href={item.href} className="transition hover:text-[#F6F2E9]">{item.label}</a></li>
               ))}
+              <li><Link to="/auth" search={{ mode: "super_admin" }} className="font-semibold text-[#C98A4B] transition hover:text-[#F6F2E9]">Super Admin Login</Link></li>
             </ul>
           </div>
 

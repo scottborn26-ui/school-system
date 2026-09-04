@@ -26,8 +26,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>): { mode?: "signin" | "register" } =>
-    search["mode"] === "register" ? { mode: "register" } : {},
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { mode?: "signin" | "register" | "super_admin" } => {
+    if (search["mode"] === "register") return { mode: "register" };
+    if (search["mode"] === "super_admin") return { mode: "super_admin" };
+    return {};
+  },
   head: () => ({
     meta: [
       { title: "Sign in · SHANSCOTT CBE School Management" },
@@ -53,7 +58,9 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [selectedRole, setSelectedRole] = useState<"principal" | "staff" | null>(null);
+  const [selectedRole, setSelectedRole] = useState<"principal" | "staff" | "super_admin" | null>(
+    mode === "super_admin" ? "super_admin" : null,
+  );
   const [showPassword, setShowPassword] = useState(false);
   type Errors = { email?: string; password?: string; fullName?: string };
   const [fieldErrors, setFieldErrors] = useState<Errors>({});
@@ -114,9 +121,11 @@ function AuthPage() {
       .eq("user_id", data.user.id)
       .eq("is_active", true);
     const authenticatedRole = (roleRows ?? []).find((row) =>
-      selectedRole === "principal"
-        ? row.role === "principal" && !staff
-        : ["admin", "exam_officer", "teacher", "class_teacher"].includes(row.role) && Boolean(staff),
+      selectedRole === "super_admin"
+        ? row.role === "super_admin"
+        : selectedRole === "principal"
+          ? row.role === "principal" && !staff
+          : ["admin", "exam_officer", "teacher", "class_teacher"].includes(row.role) && Boolean(staff),
     )?.role;
     if (!authenticatedRole) {
       if (selectedRole === "principal" && !staff && (memberships ?? []).length === 0) {
@@ -135,7 +144,7 @@ function AuthPage() {
       });
       return;
     }
-    if (selectedRole === "principal") {
+    if (selectedRole === "principal" || selectedRole === "super_admin") {
       window.localStorage.setItem("shanscott.activeRole", authenticatedRole);
     } else {
       window.localStorage.removeItem("shanscott.activeRole");
@@ -333,6 +342,14 @@ function AuthPage() {
                           onClick={() => setSelectedRole("staff")}
                         />
                         <RoleChoice
+                          icon={ShieldCheck}
+                          title="Super Admin"
+                          description="Manage schools, platform access, features and system accountability across SHANSCOTT."
+                          theme="blue"
+                          selected={selectedRole === "super_admin"}
+                          onClick={() => setSelectedRole("super_admin")}
+                        />
+                        <RoleChoice
                           icon={UserRound}
                           title="Other Roles"
                           description="Login as parent or student to view information and updates."
@@ -352,7 +369,11 @@ function AuthPage() {
                         </button>
                         <div className="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-sm font-medium">
                           Signing in as{" "}
-                          {selectedRole === "principal" ? "Headteacher / Principal" : "Staff"}
+                            {selectedRole === "principal"
+                              ? "Headteacher / Principal"
+                              : selectedRole === "super_admin"
+                                ? "Super Admin"
+                                : "Staff"}
                         </div>
                         <Field id="email" label="Email address" error={fieldErrors.email}>
                           <Input

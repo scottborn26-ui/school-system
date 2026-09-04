@@ -75,18 +75,18 @@ function SelectRolePage() {
     }
     if (requestedRole && school.roles.includes(requestedRole)) {
       school.setActiveRole(requestedRole);
-      void router.navigate({ to: "/dashboard", replace: true });
+      void router.navigate({ to: requestedRole === "super_admin" ? "/platform" : "/dashboard", replace: true });
       return;
     }
     if (single) {
       school.setActiveRole(single);
-      void router.navigate({ to: "/dashboard", replace: true });
+      void router.navigate({ to: single === "super_admin" ? "/platform" : "/dashboard", replace: true });
     }
   }, [school.loading, school.roles.length, single, requestedRole, router, school]);
 
   function choose(role: AppRole) {
     school.setActiveRole(role);
-    void router.navigate({ to: "/dashboard", replace: true });
+    void router.navigate({ to: role === "super_admin" ? "/platform" : "/dashboard", replace: true });
   }
 
   if (school.loading || single || school.roles.length === 0) {

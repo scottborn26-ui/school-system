@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck2, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -33,7 +33,16 @@ import {
 } from "@/lib/attendance";
 import { supabase } from "@/lib/supabase";
 
+type SearchParams = {
+  stream?: string;
+  area?: string;
+};
+
 export const Route = createFileRoute("/_authenticated/attendance")({
+  validateSearch: (search: Record<string, unknown>): SearchParams => ({
+    stream: search.stream as string | undefined,
+    area: search.area as string | undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Attendance · SHANSCOTT CBE" },
@@ -96,12 +105,15 @@ function AttendancePage() {
   const school = useSchool();
   const queryClient = useQueryClient();
   const schoolId = school.schoolId!;
+  const { stream: urlStreamId, area: urlAreaId } = useSearch({
+    from: "/_authenticated/attendance",
+  });
   const isTeacherScoped =
     school.can("teacher", "class_teacher") &&
     !school.can("principal", "deputy", "super_admin", "admin");
-  const [streamId, setStreamId] = useState("");
+  const [streamId, setStreamId] = useState(urlStreamId ?? "");
   const [attendanceMode, setAttendanceMode] = useState<"full_day" | "lesson">("lesson");
-  const [learningAreaId, setLearningAreaId] = useState("");
+  const [learningAreaId, setLearningAreaId] = useState(urlAreaId ?? "");
   const [slotId, setSlotId] = useState("");
   const [attendanceDate, setAttendanceDate] = useState(today);
   const [statuses, setStatuses] = useState<Record<string, AttendanceStatus>>({});
@@ -305,6 +317,14 @@ function AttendancePage() {
       setStreamId(assignedStreamIds[0] ?? "");
     }
   }, [isTeacherScoped, streamId, teacherStreamIds.data?.streamIds]);
+
+  useEffect(() => {
+    if (!streamId || !isTeacherScoped || !teacherStreamIds.data) return;
+    const isClassTeacherStream = teacherStreamIds.data.classTeacherStreamIds.includes(streamId);
+    setAttendanceMode(isClassTeacherStream ? "full_day" : "lesson");
+    setLearningAreaId(isClassTeacherStream ? "" : urlAreaId ?? "");
+    setSlotId("");
+  }, [isTeacherScoped, streamId, teacherStreamIds.data, urlAreaId]);
 
   useEffect(() => {
     setSlotId("");

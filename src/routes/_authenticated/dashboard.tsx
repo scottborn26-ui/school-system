@@ -1454,10 +1454,11 @@ function ExamOfficerDashboard() {
   const schoolId = school.schoolId!;
   const today = new Date().toISOString().slice(0, 10);
   const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const db = supabase as unknown as { from: (table: string) => any };
   const examData = useQuery({
     queryKey: ["exam-officer-dashboard", schoolId, school.termId],
     queryFn: async () => {
-      const [assessmentResult, learnerResult, markResult, areaResult, eventResult, activityResult, sessionResult] = await Promise.all([
+      const [assessmentResult, learnerResult, markResult, areaResult, eventResult, auditResult, sessionResult] = await Promise.all([
         supabase
           .from("assessments")
           .select("id, title, grade, learning_area_id, assessment_type, assessment_date, status")
@@ -1488,9 +1489,9 @@ function ExamOfficerDashboard() {
           .eq("school_id", schoolId)
           .order("created_at", { ascending: false })
           .limit(4),
-        (supabase as unknown as { from: (table: string) => any })
+        db
           .from("exam_timetable_sessions")
-          .select("id, assessment_id, invigilator_id, session_date")
+          .select("assessment_id, invigilator_id")
           .eq("school_id", schoolId),
       ]);
       if (assessmentResult.error) throw assessmentResult.error;
@@ -1498,7 +1499,7 @@ function ExamOfficerDashboard() {
       if (markResult.error) throw markResult.error;
       if (areaResult.error) throw areaResult.error;
       if (eventResult.error) throw eventResult.error;
-      if (activityResult.error) throw activityResult.error;
+      if (auditResult.error) throw auditResult.error;
       if (sessionResult.error) throw sessionResult.error;
       return {
         assessments: assessmentResult.data ?? [],
@@ -1506,7 +1507,7 @@ function ExamOfficerDashboard() {
         marks: markResult.data ?? [],
         areas: areaResult.data ?? [],
         events: eventResult.data ?? [],
-        activities: activityResult.data ?? [],
+        activities: auditResult.data ?? [],
         sessions: sessionResult.data ?? [],
       };
     },
@@ -1576,444 +1577,351 @@ function ExamOfficerDashboard() {
   const calendarOffset = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getDay();
   const displayName = school.fullName || "Exam Officer";
   const firstName = displayName.split(" ")[0];
+  const todayLabel = new Intl.DateTimeFormat("en-KE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Africa/Nairobi",
+  }).format(new Date());
   const formatExamDate = (value: string) =>
     new Date(`${value}T00:00:00`).toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
-  const activityIcons = [Calendar, Users, ClipboardCheck, FileText];
-  const activityClasses = [
-    "bg-violet-50 text-violet-600",
-    "bg-emerald-50 text-emerald-600",
-    "bg-orange-50 text-orange-600",
-    "bg-blue-50 text-blue-600",
-  ];
-  const activities = (examData.data?.activities ?? []).map((activity, index) => [
-    `${activity.action} ${activity.entity.replace(/_/g, " ")}`,
-    `by ${activity.actor_name ?? "Unknown user"}`,
-    formatDateTime(activity.created_at),
-    activityIcons[index % activityIcons.length],
-    activityClasses[index % activityClasses.length],
-  ] as const);
-  const sessions = examData.data?.sessions ?? [];
-  const unassignedSessions = sessions.filter((session) => !session.invigilator_id).length;
-  const practicalDueNextWeek = assessments.filter(
-    (assessment) =>
-      assessment.assessment_type.toLowerCase().includes("practical") &&
-      assessment.assessment_date >= today &&
-      assessment.assessment_date <= nextWeek,
+  const activities = (examData.data?.activities ?? []).map((activity) => {
+    const entity = activity.entity.replaceAll("_", " ");
+    const action = activity.action.toLowerCase();
+    const Icon = action.includes("mark") ? ClipboardCheck : action.includes("publish") ? FileText : Calendar;
+    const iconClass = action.includes("mark")
+      ? "bg-orange-50 text-orange-600"
+      : action.includes("publish")
+        ? "bg-blue-50 text-blue-600"
+        : "bg-violet-50 text-violet-600";
+    return {
+      id: activity.id,
+      title: `${activity.action} ${entity}`,
+      by: `by ${activity.actor_name ?? "System"}`,
+      time: formatDateTime(activity.created_at),
+      Icon,
+      iconClass,
+    };
+  });
+  const unassignedSessions = (examData.data?.sessions ?? []).filter(
+    (session) => !session.invigilator_id && assessments.some((assessment) => assessment.id === session.assessment_id),
   ).length;
-  const pendingCandidates = assessments.reduce(
-    (total, assessment) => total + Math.max(0, progress(assessment).total - progress(assessment).marked),
-    0,
-  );
-  const badgeTone = (assessment: (typeof assessments)[number]) => {
-    const result = progress(assessment);
-    if (assessment.status === "draft") return "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/70 dark:bg-sky-950/40 dark:text-sky-200";
-    if (assessment.status === "locked" || (assessment.status === "approved" && result.marked >= result.total))
-      return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-200";
-    return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/70 dark:bg-amber-950/40 dark:text-amber-200";
-  };
-
+  const practicalDue = assessments.filter(
+    (assessment) => assessment.assessment_date >= today && assessment.assessment_date <= nextWeek && assessment.assessment_type.toLowerCase().includes("practical"),
+  ).length;
+  const alerts = [
+    unassignedSessions > 0 && [`${unassignedSessions} exam${unassignedSessions === 1 ? " is" : "s are"} not yet assigned invigilators.`, "Assign now", "border-red-300 bg-red-50 text-red-800", "/staff"],
+    pending > 0 && [`Mark entry pending for ${pending} exam${pending === 1 ? "" : "s"}.`, "Enter marks", "border-amber-300 bg-amber-50 text-amber-800", "/marks"],
+    practicalDue > 0 && [`${practicalDue} practical exam${practicalDue === 1 ? " is" : "s are"} due within the next week.`, "View schedule", "border-blue-300 bg-blue-50 text-blue-800", "/exam-timetable"],
+  ].filter(Boolean) as Array<[string, string, string, "/staff" | "/marks" | "/exam-timetable"]>;
   return (
-    <div className="mx-auto w-full max-w-[1440px] space-y-6 pb-8">
-      <div className="relative overflow-hidden rounded-2xl border border-sky-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.38),_transparent_32%),linear-gradient(135deg,#0b1f3a_0%,#12335d_35%,#0f766e_100%)] px-6 py-6 text-white shadow-[0_18px_40px_rgba(15,23,42,0.12)] sm:px-8">
-        <div className="absolute -right-12 -top-16 size-48 rounded-full border-[18px] border-white/10" />
-        <div className="absolute -bottom-16 right-16 size-44 rounded-full border-[16px] border-cyan-200/10" />
-        <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent_0%,rgba(255,255,255,0.08)_50%,transparent_100%)]" />
-        <div className="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+    <div className="mx-auto max-w-[1440px] space-y-6 pb-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold text-primary">Exam office</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight">Welcome back, {firstName}!</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Here&apos;s an overview of your examination activities.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm">
+          <Calendar className="size-5 text-primary" />
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100/90">
-              Exam office
-            </p>
-            <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
-              Welcome back, {firstName}!
-            </h1>
-            <p className="mt-2 max-w-xl text-sm text-slate-100/90">
-              Here&apos;s a live overview of your examination schedule, marking progress, and essential alerts.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-sm">
-            <div className="grid size-9 place-items-center rounded-lg bg-white/12 text-cyan-100">
-              <Calendar className="size-4" />
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.1em] text-slate-200/80">Today</p>
-              <p className="text-xs font-semibold text-white">
-                {new Date().toLocaleDateString("en-KE", { dateStyle: "long" })}
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground">Today</p>
+            <p className="text-sm font-semibold">{todayLabel}</p>
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {stats.map(([label, value, Icon, color, background]) => (
-          <Card
-            key={label}
-            className="group relative overflow-hidden rounded-xl border border-border/70 bg-card/90 shadow-[0_8px_18px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(15,23,42,0.08)]"
-          >
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-400 via-cyan-400 to-emerald-400 opacity-80" />
-            <CardContent className="flex min-h-[104px] flex-col justify-between p-3.5">
-              <div className={`inline-flex size-9 items-center justify-center rounded-lg ${background} ring-1 ring-black/5 transition-transform duration-200 group-hover:scale-105`}>
-                <Icon className={`size-4 ${color}`} />
+          <Card key={label} className="rounded-xl border-border/70 shadow-sm">
+            <CardContent className="flex min-h-[132px] flex-col justify-between p-5">
+              <div className={`grid size-10 place-items-center rounded-full ${background}`}>
+                <Icon className={`size-5 ${color}`} />
               </div>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                  {label}
-                </p>
-                <p className={cn("mt-1.5 text-xl font-black tracking-tight text-foreground", examData.isLoading && "text-muted-foreground")}>
-                  {examData.isLoading ? <Skeleton className="h-6 w-12" /> : value}
-                </p>
+                <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                <p className="mt-1 text-2xl font-bold">{examData.isLoading ? "--" : value}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        <Card className="rounded-2xl border border-border/70 bg-card/90 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-lg font-bold">Exam schedule</CardTitle>
-              <span className="rounded-full bg-sky-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-sky-700 dark:bg-sky-950/40 dark:text-sky-200">
-                {assessments.length} total
-              </span>
-            </div>
-            <CardDescription className="text-xs">Current term overview</CardDescription>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[0.9fr_1.6fr_0.9fr]">
+        <Card className="rounded-xl border-border/70 shadow-sm">
+          <CardHeader>
+            <CardTitle>Exam schedule overview</CardTitle>
+            <CardDescription>{assessments.length} total exams this term</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-center">
-              <div
-                className="grid size-40 place-items-center rounded-full bg-[conic-gradient(#2563eb_0_40%,#16a34a_40%_78%,#7c3aed_78%_100%)] p-3 shadow-inner shadow-slate-200/70"
-                style={{
-                  background: `conic-gradient(#2563eb 0 ${(upcoming / Math.max(1, assessments.length)) * 100}%, #16a34a ${(upcoming / Math.max(1, assessments.length)) * 100}% ${((upcoming + completed) / Math.max(1, assessments.length)) * 100}%, #7c3aed ${((upcoming + completed) / Math.max(1, assessments.length)) * 100}% 100%)`,
-                }}
-              >
-                <div className="grid size-28 place-items-center rounded-full bg-card text-center shadow-[inset_0_2px_10px_rgba(15,23,42,0.06)]">
-                  <strong className="text-2xl font-black text-foreground">{assessments.length}</strong>
-                  <span className="text-[11px] font-medium text-muted-foreground">Total exams</span>
-                </div>
+          <CardContent className="space-y-5">
+            <div
+              className="mx-auto grid size-44 place-items-center rounded-full"
+              style={{
+                background:
+                  "conic-gradient(#2563eb 0 40%, #16a34a 40% 50%, #7c3aed 50% 100%, #ef4444 100%)",
+              }}
+            >
+              <div className="grid size-28 place-items-center rounded-full bg-card text-center">
+                <strong className="text-2xl">{assessments.length}</strong>
+                <span className="text-xs text-muted-foreground">Total exams</span>
               </div>
             </div>
-            <div className="space-y-2.5 text-sm">
+            <div className="space-y-2 text-sm">
               {[
                 ["Upcoming", upcoming, "bg-blue-600"],
-                ["Completed", completed, "bg-emerald-600"],
-                ["Pending", pending, "bg-amber-500"],
+                ["Ongoing", 0, "bg-emerald-600"],
+                ["Completed", completed, "bg-violet-600"],
+                ["Cancelled", 0, "bg-red-500"],
               ].map(([label, value, dot]) => (
-                <div className="flex items-center justify-between rounded-xl bg-muted/40 px-2.5 py-2" key={label}>
-                  <span className="flex items-center gap-2 text-muted-foreground">
-                    <span className={`size-2.5 rounded-full ${dot}`} />
-                    <span>{label}</span>
+                <div className="flex items-center justify-between" key={label}>
+                  <span className="flex items-center gap-2">
+                    <span className={`size-2 rounded-full ${dot}`} />
+                    {label}
                   </span>
-                  <strong className="text-base font-bold text-foreground">{value}</strong>
+                  <strong>{value}</strong>
                 </div>
               ))}
             </div>
             <Link
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-primary"
               to="/exam-timetable"
             >
-              View full schedule <ArrowRight className="size-3.5" />
+              View full exam schedule <ArrowRight className="size-4" />
             </Link>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border border-border/70 bg-card/90 shadow-[0_12px_28px_rgba(15,23,42,0.04)] md:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
+        <Card className="rounded-xl border-border/70 shadow-sm">
+          <CardHeader className="flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-bold">Upcoming exams</CardTitle>
-              <CardDescription className="text-xs">Next scheduled assessment dates</CardDescription>
+              <CardTitle>Upcoming exams</CardTitle>
+              <CardDescription>Next scheduled assessment dates</CardDescription>
             </div>
-            <Link className="text-xs font-semibold text-primary hover:text-primary/80" to="/exam-timetable">
-              View all →
+            <Link className="text-sm font-semibold text-primary" to="/exam-timetable">
+              View all
             </Link>
           </CardHeader>
           <CardContent>
-            {examData.isLoading ? (
-              <div className="space-y-2.5">
-                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
-              </div>
-            ) : upcomingExams.length === 0 ? (
-              <p className="py-6 text-center text-xs text-muted-foreground">No upcoming exams scheduled.</p>
-            ) : (
-              <div className="space-y-2.5">
-                {upcomingExams.map((assessment) => (
-                  <div
-                    key={assessment.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-gradient-to-r from-muted/25 to-background/70 p-3 transition-colors hover:border-primary/20 hover:bg-muted/50"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold leading-tight text-foreground">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Exam</TableHead>
+                    <TableHead>Class</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {upcomingExams.map((assessment) => (
+                    <TableRow key={assessment.id}>
+                      <TableCell className="whitespace-nowrap font-medium">
                         {assessment.title}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {GRADE_LABELS[assessment.grade]} · {assessment.assessment_type}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <time className="whitespace-nowrap text-xs font-medium text-slate-600 dark:text-slate-300">
+                      </TableCell>
+                      <TableCell>{GRADE_LABELS[assessment.grade]}</TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {formatExamDate(assessment.assessment_date)}
-                      </time>
-                      <Badge variant="outline" className={`whitespace-nowrap text-[10px] font-semibold ${badgeTone(assessment)}`}>
-                        {status(assessment)}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                      </TableCell>
+                      <TableCell className="capitalize">{assessment.assessment_type}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="whitespace-nowrap">
+                          {status(assessment)}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            {!examData.isLoading && upcomingExams.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">No upcoming exams.</p>
             )}
           </CardContent>
         </Card>
-      </div>
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-        <Card className="rounded-2xl border border-border/70 bg-card/90 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-bold">Quick actions</CardTitle>
-            <CardDescription className="text-xs">Common exam office tasks</CardDescription>
+        <Card className="rounded-xl border-border/70 shadow-sm">
+          <CardHeader>
+            <CardTitle>Quick actions</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2.5">
-            {[
-              { label: "Schedule exam", icon: Plus, to: "/assignments" },
-              { label: "Manage timetable", icon: Calendar, to: "/exam-timetable" },
-              { label: "Assign invigilators", icon: Users, to: "/staff" },
-              { label: "Enter marks", icon: ClipboardCheck, to: "/marks" },
-              { label: "Generate reports", icon: FileBarChart, to: "/reports" },
-            ].map((action) => (
-              <Button
-                key={action.label}
-                asChild
-                variant="outline"
-                className="h-auto min-h-18 flex-col gap-1.5 rounded-xl border border-border/70 bg-background/60 px-2 py-3 text-[11px] font-semibold leading-tight shadow-[0_1px_7px_rgba(15,23,42,0.04)] transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:bg-primary/5 hover:text-primary hover:shadow-md"
-              >
-                <Link to={action.to} className="flex flex-col items-center justify-center gap-1.5">
-                  <action.icon className="size-4 text-primary" />
-                  <span className="text-center">{action.label}</span>
-                </Link>
-              </Button>
+          <CardContent className="space-y-2.5">
+            <Button asChild className="h-11 w-full justify-start bg-blue-600 hover:bg-blue-700">
+              <Link to="/assignments">
+                <Plus className="mr-2 size-4" />
+                Schedule new exam
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 w-full justify-start border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+            >
+              <Link to="/exam-timetable">
+                <Calendar className="mr-2 size-4" />
+                Manage timetable
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 w-full justify-start border-violet-200 text-violet-700 hover:bg-violet-50"
+            >
+              <Link to="/staff">
+                <Users className="mr-2 size-4" />
+                Assign invigilators
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 w-full justify-start border-orange-200 text-orange-700 hover:bg-orange-50"
+            >
+              <Link to="/marks">
+                <ClipboardCheck className="mr-2 size-4" />
+                Enter marks
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 w-full justify-start border-teal-200 text-teal-700 hover:bg-teal-50"
+            >
+              <Link to="/reports">
+                <FileBarChart className="mr-2 size-4" />
+                Generate reports
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <Card className="rounded-xl border-border/70 shadow-sm">
+          <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <CardTitle>Events</CardTitle>
+              <CardDescription>Coming up this week.</CardDescription>
+            </div>
+            <Button asChild variant="ghost" size="sm"><Link to="/settings">View calendar</Link></Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {upcomingEvents.length === 0 ? <p className="text-sm text-muted-foreground">No events scheduled this week.</p> : upcomingEvents.map((event) => (
+              <div key={event.id} className="flex items-center gap-3 rounded-lg p-2 hover:bg-muted/40">
+                {event.image_url ? <img src={event.image_url} alt="" className="size-10 shrink-0 rounded-md object-cover" /> : <Calendar className="size-5 shrink-0 text-primary" />}
+                <div className="min-w-0"><p className="truncate text-sm font-semibold">{event.title}</p><p className="text-xs text-muted-foreground">{formatExamDate(event.start_date)}</p></div>
+              </div>
             ))}
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border border-border/70 bg-card/90 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
-            <div>
-              <CardTitle className="text-lg font-bold">Events</CardTitle>
-              <CardDescription className="text-xs">Coming up this week</CardDescription>
-            </div>
-            <Button asChild variant="ghost" size="sm" className="h-auto rounded-lg px-1.5 py-0.5 text-[11px]">
-              <Link to="/settings">View calendar</Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-2.5">
-            {upcomingEvents.length === 0 ? (
-              <p className="text-center text-xs text-muted-foreground">No events scheduled this week.</p>
-            ) : (
-              upcomingEvents.map((event) => (
-                <div key={event.id} className="flex items-start gap-2.5 rounded-xl border border-border/60 bg-gradient-to-r from-sky-50/70 to-transparent p-2.5 text-xs dark:from-sky-950/20 dark:to-transparent">
-                  <div className="mt-0.5 grid size-8 place-items-center rounded-lg bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200">
-                    <Calendar className="size-3.5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-foreground">{event.title}</p>
-                    <p className="mt-0.5 text-muted-foreground">{formatExamDate(event.start_date)}</p>
-                  </div>
-                </div>
-              ))
-            )}
+        <Card className="rounded-xl border-border/70 shadow-sm">
+          <CardHeader><CardTitle>Calendar</CardTitle><CardDescription>{new Date().toLocaleDateString("en-KE", { month: "long", year: "numeric" })}</CardDescription></CardHeader>
+          <CardContent className="space-y-2">
+            <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase text-muted-foreground">{["S", "M", "T", "W", "T", "F", "S"].map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}</div>
+            <div className="grid grid-cols-7 gap-1 text-center text-xs">{Array.from({ length: calendarOffset }, (_, index) => <span key={`empty-${index}`} />)}{Array.from({ length: calendarDays }, (_, index) => <span key={index} className={cn("grid size-7 place-items-center rounded-full", index + 1 === new Date().getDate() && "bg-primary font-bold text-primary-foreground")}>{index + 1}</span>)}</div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border border-border/70 bg-card/90 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-bold">Calendar</CardTitle>
-            <CardDescription className="text-xs">
-              {new Date().toLocaleDateString("en-KE", { month: "long", year: "numeric" })}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase text-muted-foreground">
-              {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
-                <span key={`${day}-${index}`}>{day}</span>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1 text-center text-xs">
-              {Array.from({ length: calendarOffset }, (_, index) => (
-                <span key={`empty-${index}`} />
-              ))}
-              {Array.from({ length: calendarDays }, (_, index) => (
-                <span
-                  key={index}
-                  className={cn(
-                    "grid size-7 place-items-center rounded-full transition-colors",
-                    index + 1 === new Date().getDate() && "bg-primary font-bold text-primary-foreground shadow-sm",
-                    index + 1 !== new Date().getDate() && "text-slate-600 hover:bg-muted/70 dark:text-slate-300",
-                  )}
-                >
-                  {index + 1}
-                </span>
-              ))}
-            </div>
-          </CardContent>
+        <Card className="rounded-xl border-border/70 shadow-sm">
+          <CardHeader><CardTitle>Quick actions</CardTitle></CardHeader>
+          <CardContent className="space-y-2.5"><Button asChild className="h-11 w-full justify-start"><Link to="/settings"><Calendar className="mr-2 size-4" />Manage calendar</Link></Button><Button asChild variant="outline" className="h-11 w-full justify-start"><Link to="/exam-timetable"><ClipboardList className="mr-2 size-4" />View exam timetable</Link></Button><Button asChild variant="outline" className="h-11 w-full justify-start"><Link to="/marks"><ClipboardCheck className="mr-2 size-4" />Enter marks</Link></Button></CardContent>
         </Card>
       </div>
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <Card className="rounded-2xl border border-border/70 bg-card/90 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle className="text-lg font-bold">Mark entry status</CardTitle>
-                <CardDescription className="text-xs">Overall progress</CardDescription>
-              </div>
-              <strong className="text-xl font-black text-emerald-600 dark:text-emerald-400">{markProgress}%</strong>
-            </div>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <Card className="rounded-xl border-border/70 shadow-sm">
+          <CardHeader className="flex-row items-center justify-between">
+            <CardTitle>Mark entry status</CardTitle>
+            <strong className="text-lg text-emerald-600">{markProgress}%</strong>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             <div>
-              <div className="mb-2.5 flex justify-between text-xs text-muted-foreground">
-                <span>Progress</span>
-                <span className="font-medium text-foreground">
+              <div className="mb-2 flex justify-between text-xs text-muted-foreground">
+                <span>Overall progress</span>
+                <span>
                   {totalMarked} of {markTotal} marks
                 </span>
               </div>
               <div className="h-2.5 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 shadow-[0_0_12px_rgba(16,185,129,0.3)] transition-[width] duration-300"
+                  className="h-full rounded-full bg-emerald-500"
                   style={{ width: `${markProgress}%` }}
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="grid grid-cols-3 gap-2 text-center">
               {[
-                ["Completed", totalMarked, "text-emerald-600 dark:text-emerald-400"],
-                ["Pending", pending, "text-orange-600 dark:text-orange-400"],
-                ["Outstanding", Math.max(0, totalLearners - totalMarked), "text-red-600 dark:text-red-400"],
+                ["Completed", totalMarked, "text-emerald-600"],
+                ["In progress", pending, "text-orange-600"],
+                ["Pending", Math.max(0, totalLearners - totalMarked), "text-red-500"],
               ].map(([label, value, color]) => (
-                <div className="rounded-xl border border-border/60 bg-muted/30 px-2 py-2.5" key={label}>
-                  <strong className={`block text-base font-black ${color}`}>{value}</strong>
-                  <span className="mt-0.5 text-[10px] text-muted-foreground">{label}</span>
+                <div className="rounded-lg bg-muted/60 px-2 py-3" key={label}>
+                  <strong className={`block text-lg ${color}`}>{value}</strong>
+                  <span className="text-[11px] text-muted-foreground">{label}</span>
                 </div>
               ))}
             </div>
             <Link
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-primary"
               to="/marks"
             >
-              Go to mark entry <ArrowRight className="size-3" />
+              Go to mark entry <ArrowRight className="size-4" />
             </Link>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border border-border/70 bg-card/90 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
-            <div>
-              <CardTitle className="text-lg font-bold">Recent activities</CardTitle>
-              <CardDescription className="text-xs">Audit trail of changes</CardDescription>
-            </div>
-            <Link className="text-xs font-semibold text-primary hover:text-primary/80" to="/audit">
-              View all →
+        <Card className="rounded-xl border-border/70 shadow-sm">
+          <CardHeader className="flex-row items-center justify-between">
+            <CardTitle>Recent activities</CardTitle>
+            <Link className="text-sm font-semibold text-primary" to="/audit">
+              View all
             </Link>
           </CardHeader>
-          <CardContent className="space-y-2.5">
-            {activities.length === 0 ? (
-              <p className="py-4 text-center text-xs text-muted-foreground">No activity recorded yet.</p>
-            ) : (
-              activities.map(([title, by, time, Icon, iconClass]) => (
-                <div key={title} className="flex items-start gap-2.5 rounded-xl border border-border/60 bg-gradient-to-r from-muted/30 to-background/60 p-2.5 text-xs">
-                  <div className={`grid size-8 shrink-0 place-items-center rounded-lg ${iconClass}`}>
-                    <Icon className="size-3.5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-foreground">{title}</p>
-                    <p className="mt-0.5 text-muted-foreground">{by}</p>
-                  </div>
-                  <time className="shrink-0 whitespace-nowrap text-[10px] text-muted-foreground">
-                    {time}
-                  </time>
+          <CardContent className="space-y-4">
+            {activities.length === 0 && <p className="text-sm text-muted-foreground">No recent activity.</p>}
+            {activities.map(({ id, title, by, time, Icon, iconClass }) => (
+              <div className="flex items-start gap-3" key={id}>
+                <div
+                  className={`grid size-9 shrink-0 place-items-center rounded-full ${iconClass}`}
+                >
+                  <Icon className="size-4" />
                 </div>
-              ))
-            )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold leading-tight">{title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{by}</p>
+                </div>
+                <time className="shrink-0 text-right text-[11px] text-muted-foreground">
+                  {time}
+                </time>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card className="rounded-xl border-border/70 shadow-sm">
+          <CardHeader className="flex-row items-center justify-between">
+            <CardTitle>Exam alerts</CardTitle>
+            <Link className="text-sm font-semibold text-primary" to="/exam-timetable">
+              View all
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {alerts.length === 0 && <p className="text-sm text-muted-foreground">No exam alerts.</p>}
+            {alerts.map(([message, action, alertClass, to]) => (
+              <Link
+                to={to}
+                className={`flex items-center gap-3 rounded-lg border-l-4 p-3 text-sm ${alertClass}`}
+                key={message}
+              >
+                <CircleAlert className="size-4 shrink-0" />
+                <span className="min-w-0 flex-1">
+                  <strong className="block">{message}</strong>
+                  <span className="mt-1 block text-xs font-semibold underline">{action}</span>
+                </span>
+                <ChevronRight className="size-4 shrink-0" />
+              </Link>
+            ))}
           </CardContent>
         </Card>
       </div>
-      <Card className="rounded-2xl border border-border/70 bg-card/90 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-        <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
-          <div>
-            <CardTitle className="text-base font-semibold">Exam alerts</CardTitle>
-            <CardDescription className="text-xs">Active notices and reminders</CardDescription>
-          </div>
-          <Link className="text-xs font-semibold text-primary hover:text-primary/80" to="/exam-timetable">
-            View all →
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {examData.isLoading ? (
-            <div className="space-y-2">
-              {[1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
-            </div>
-          ) : [
-            unassignedSessions > 0 && [
-              `${unassignedSessions} exam${unassignedSessions === 1 ? " is" : "s are"} not assigned invigilators.`,
-              "Assign now",
-              "border-l-4 border-l-red-500 bg-red-50 text-red-900 dark:bg-red-950/30 dark:text-red-200",
-              "/exam-timetable",
-            ],
-            pendingCandidates > 0 && [
-              `${pendingCandidates} candidate mark${pendingCandidates === 1 ? " is" : "s are"} pending.`,
-              "Enter marks",
-              "border-l-4 border-l-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200",
-              "/marks",
-            ],
-            practicalDueNextWeek > 0 && [
-              `${practicalDueNextWeek} practical exam${practicalDueNextWeek === 1 ? " is" : "s are"} due next week.`,
-              "View schedule",
-              "border-l-4 border-l-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-950/30 dark:text-blue-200",
-              "/exam-timetable",
-            ],
-          ].filter(Boolean).length === 0 ? (
-            <div className="rounded-lg border border-border/50 bg-muted/30 px-4 py-3 text-center text-xs text-muted-foreground">
-              <CheckCircle2 className="mx-auto mb-2 size-4 text-emerald-600" />
-              <p>No active exam alerts</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {[
-                unassignedSessions > 0 && [
-                  `${unassignedSessions} exam${unassignedSessions === 1 ? " is" : "s are"} not assigned invigilators.`,
-                  "Assign now",
-                  "border-l-4 border-l-red-500 bg-red-50 text-red-900 dark:bg-red-950/30 dark:text-red-200",
-                  "/exam-timetable",
-                ],
-                pendingCandidates > 0 && [
-                  `${pendingCandidates} candidate mark${pendingCandidates === 1 ? " is" : "s are"} pending.`,
-                  "Enter marks",
-                  "border-l-4 border-l-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200",
-                  "/marks",
-                ],
-                practicalDueNextWeek > 0 && [
-                  `${practicalDueNextWeek} practical exam${practicalDueNextWeek === 1 ? " is" : "s are"} due next week.`,
-                  "View schedule",
-                  "border-l-4 border-l-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-950/30 dark:text-blue-200",
-                  "/exam-timetable",
-                ],
-              ].filter(Boolean).map((alert) => {
-                const [message, action, alertClass, to] = alert as [string, string, string, string];
-                return (
-                  <Link
-                    to={to}
-                    className={`flex items-center gap-3 rounded-lg p-3 text-xs font-medium transition-colors hover:opacity-80 ${alertClass}`}
-                    key={message}
-                  >
-                    <CircleAlert className="size-4 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium">{message}</p>
-                      <p className="mt-0.5 text-[10px] font-semibold opacity-75">{action}</p>
-                    </div>
-                    <ArrowRight className="size-3.5 shrink-0" />
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      <footer className="flex flex-wrap justify-between gap-2 border-t border-border/50 pt-4 text-xs text-muted-foreground">
+      <footer className="flex flex-wrap justify-between gap-2 border-t pt-5 text-xs text-muted-foreground">
         <span>© 2024 School Management System. All rights reserved.</span>
         <span>SMS Version 2.0.0</span>
       </footer>

@@ -97,6 +97,7 @@ const NAV_GROUPS: NavGroup[] = [
       "/classes",
       "/curriculum",
       "/my-teaching",
+      "/my-classes",
       "/assignments",
       "/assessments",
       "/grading",
@@ -146,6 +147,12 @@ const NAV: NavItem[] = [
     to: "/my-teaching",
     label: "My Teaching",
     icon: faBookOpen,
+    roles: ["teacher", "class_teacher"],
+  },
+  {
+    to: "/my-classes",
+    label: "My Classes",
+    icon: faUsers,
     roles: ["teacher", "class_teacher"],
   },
   {

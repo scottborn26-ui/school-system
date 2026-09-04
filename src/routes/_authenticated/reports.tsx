@@ -89,6 +89,10 @@ interface ReportPayload {
   };
   term: string;
   school: string;
+  ranking?: {
+    grade_position: number;
+    grade_size: number;
+  };
 }
 
 function ReportsPage() {
@@ -266,6 +270,14 @@ function ReportsPage() {
       if (!school.termId) throw new Error("Select a term first.");
       const learnerRows = learners.data ?? [];
       if (learnerRows.length === 0) throw new Error("This class has no learners.");
+      const { data: gradeLearnerRows, error: gradeLearnersError } = await supabase
+        .from("learners")
+        .select("id, admission_number, first_name, last_name, current_grade, current_stream_id")
+        .eq("school_id", schoolId)
+        .eq("current_grade", stream.grade)
+        .eq("is_archived", false)
+        .order("last_name");
+      if (gradeLearnersError) throw gradeLearnersError;
 
       const seniorDb = supabase as unknown as { from: (table: string) => any };
       const { data: pathwayAssignments, error: pathwayError } = await seniorDb
@@ -328,10 +340,9 @@ function ReportsPage() {
 
       const { data: assessments, error: aErr } = await supabase
         .from("assessments")
-        .select("id, learning_area_id, max_score, weight, status")
+        .select("id, learning_area_id, max_score, weight, status, stream_id")
         .eq("school_id", schoolId)
         .eq("term_id", school.termId)
-        .or(`stream_id.is.null,stream_id.eq.${streamId}`)
         .in("status", ["approved", "locked"]);
       if (aErr) throw aErr;
       if (!assessments || assessments.length === 0) {
@@ -353,10 +364,12 @@ function ReportsPage() {
         );
       if (mErr) throw mErr;
 
-      // Aggregate per learner and learning area (mean percentage of approved assessments)
-      const summaries = learnerRows.map((l) => {
+      // Aggregate per learner and learning area, using only assessments applicable to that learner.
+      const summarize = (learnerRowsToSummarize: typeof learnerRows) => learnerRowsToSummarize.map((l) => {
         const byArea = new Map<string, number[]>();
         for (const a of assessments) {
+          const assessmentStream = (a as { stream_id?: string | null }).stream_id;
+          if (assessmentStream && assessmentStream !== l.current_stream_id) continue;
           const m = (marks ?? []).find((x) => x.learner_id === l.id && x.assessment_id === a.id);
           if (!m || m.is_absent || m.is_exempt || m.percentage === null) continue;
           const list = byArea.get(a.learning_area_id) ?? [];
@@ -384,11 +397,18 @@ function ReportsPage() {
         return { learner: l, areaResults, mean, points };
       });
 
+      const summaries = summarize(learnerRows);
+      const gradeSummaries = summarize(gradeLearnerRows ?? []);
       const ranked = [...summaries].sort((a, b) => b.mean - a.mean);
+      const gradeRanked = [...gradeSummaries].sort((a, b) => b.mean - a.mean);
+      const gradeRank = new Map(
+        gradeRanked.map((summary, index) => [summary.learner.id, index + 1]),
+      );
 
       let created = 0;
       for (const s of summaries) {
         const position = ranked.findIndex((r) => r.learner.id === s.learner.id) + 1;
+        const gradePosition = gradeRank.get(s.learner.id) ?? null;
         const { data: existing } = await supabase
           .from("report_cards")
           .select("id, version, status")
@@ -416,6 +436,9 @@ function ReportsPage() {
           },
           term: school.terms.find((t) => t.id === school.termId)?.name ?? "Term",
           school: school.school?.name ?? "School",
+          ranking: gradePosition
+            ? { grade_position: gradePosition, grade_size: gradeRanked.length }
+            : undefined,
         };
         const row = {
           school_id: schoolId,
@@ -749,7 +772,7 @@ function ReportsPage() {
             </div>
 
             {/* Summary tiles */}
-            <div className="report-block grid gap-2 px-6 py-3 sm:grid-cols-3">
+            <div className="report-block grid gap-2 px-6 py-3 sm:grid-cols-4">
               {[
                 {
                   label: "Mean score",
@@ -759,6 +782,12 @@ function ReportsPage() {
                 {
                   label: "Class position",
                   value: `${selected.class_position ?? "—"} of ${selected.class_size ?? "—"}`,
+                },
+                {
+                  label: "Grade position",
+                  value: payload?.ranking
+                    ? `${payload.ranking.grade_position} of ${payload.ranking.grade_size}`
+                    : "—",
                 },
               ].map((t) => (
                 <div key={t.label} className="rounded-lg border bg-muted/30 px-3 py-2 text-center">

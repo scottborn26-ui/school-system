@@ -29,7 +29,8 @@ import {
 } from "@/components/ui/select";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DetailPanel } from "@/components/detail-panel";
+import { DetailPanel, PersonAvatar } from "@/components/detail-panel";
+import { PhotoUploader } from "@/components/photo-uploader";
 import { supabase } from "@/lib/supabase";
 import { useSchool } from "@/hooks/use-school";
 import { GRADE_LABELS, type CbeGrade } from "@/lib/cbe";
@@ -81,6 +82,9 @@ interface StaffRow {
   class_teacher_grade: CbeGrade | null;
   class_teacher_stream_id: string | null;
   class_teacher_stream_name: string | null;
+  photo_url: string | null;
+  gender: string | null;
+  national_id: string | null;
 }
 
 interface ClassStream {
@@ -122,7 +126,7 @@ function StaffPage() {
         supabase
           .from("staff")
           .select(
-            "id, user_id, staff_number, full_name, tsc_number, job_title, employment_type, phone, email, employment_date, status, assigned_grade, assigned_grades, class_teacher_grade",
+            "id, user_id, staff_number, full_name, tsc_number, job_title, employment_type, phone, email, employment_date, status, assigned_grade, assigned_grades, class_teacher_grade, photo_url, gender, national_id",
           )
           .eq("school_id", schoolId)
           .eq("is_archived", false)
@@ -156,6 +160,9 @@ function StaffPage() {
         class_teacher_grade: null,
         class_teacher_stream_id: null,
         class_teacher_stream_name: null,
+        photo_url: null,
+        gender: null,
+        national_id: null,
       })) as StaffRow[];
     },
   });
@@ -322,10 +329,15 @@ function StaffPage() {
           onClick={() => setSelectedStaffId(r.id)}
           aria-label={`Open ${r.full_name} staff profile`}
         >
-          <p className="font-medium leading-tight hover:text-primary">{r.full_name}</p>
-          <p className="text-xs leading-tight text-muted-foreground">
-            {r.tsc_number ? `TSC ${r.tsc_number}` : "No TSC number"}
-          </p>
+          <div className="flex items-center gap-2.5">
+            <PersonAvatar name={r.full_name} photoUrl={r.photo_url} className="size-9" />
+            <div>
+              <p className="font-medium leading-tight hover:text-primary">{r.full_name}</p>
+              <p className="text-xs leading-tight text-muted-foreground">
+                {r.tsc_number ? `TSC ${r.tsc_number}` : "No TSC number"}
+              </p>
+            </div>
+          </div>
         </button>
       ),
     },
@@ -359,34 +371,10 @@ function StaffPage() {
         ),
     },
     {
-      key: "employment_type",
-      header: "Employment",
-      cell: (r) => (
-        <Badge variant="outline" className="whitespace-nowrap capitalize">
-          {(r.employment_type ?? "—").replace(/_/g, " ")}
-        </Badge>
-      ),
-    },
-    {
-      key: "contact",
-      header: "Contact",
-      className: "w-16",
-      cell: (r) => (
-        <span
-          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground"
-          title={[r.email, r.phone].filter(Boolean).join(" · ") || "No contact details"}
-          aria-label={[r.email, r.phone].filter(Boolean).join(", ") || "No contact details"}
-        >
-          {r.email ? <Mail className="size-4" /> : r.phone ? <Phone className="size-4" /> : "—"}
-        </span>
-      ),
-    },
-    {
-      key: "employment_date",
-      header: "Employed",
-      sortable: true,
-      sortValue: (r) => r.employment_date ?? "",
-      cell: (r) => formatDate(r.employment_date),
+      key: "phone",
+      header: "Phone",
+      className: "min-w-[140px]",
+      cell: (r) => r.phone || "—",
     },
     {
       key: "status",
@@ -450,7 +438,15 @@ function StaffPage() {
             ? (drawerMember.job_title ?? drawerMember.employment_type ?? "Staff member")
             : "Loading…"
         }
+        onEdit={() => {
+          const staffRow = rows.find((row) => row.id === selectedStaffId);
+          if (staffRow) {
+            setEditing(staffRow);
+            setSelectedStaffId(null);
+          }
+        }}
         onCloseFocus={() => openStaffTriggerRef.current?.focus()}
+        onPrint={() => window.print()}
       >
         {selectedStaffDetail.isLoading ? (
           <div className="space-y-3 py-8 text-sm text-muted-foreground">
@@ -475,6 +471,11 @@ function StaffPage() {
               </div>
               <div className="text-right text-sm text-muted-foreground">
                 <div>{drawerMember.job_title ?? "No title"}</div>
+                {selectedStaffDetail.data?.classStream && (
+                  <div className="mt-1 text-xs font-medium text-primary">
+                    Class teacher · {GRADE_LABELS[selectedStaffDetail.data.classStream.grade]} · {selectedStaffDetail.data.classStream.name}
+                  </div>
+                )}
                 <div className="mt-2 flex max-w-[220px] flex-wrap justify-end gap-1.5">
                   {(drawerMember.assigned_grades?.length
                     ? drawerMember.assigned_grades
@@ -497,28 +498,16 @@ function StaffPage() {
               <div className="text-sm font-semibold text-foreground">
                 Personal & employment information
               </div>
-              <div className="divide-y divide-border/70">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <FactItem icon={IdCard} label="Gender" value={drawerMember.gender ?? "Not captured"} />
                 <FactItem icon={Phone} label="Phone" value={drawerMember.phone ?? "Not captured"} />
                 <FactItem icon={Mail} label="Email" value={drawerMember.email ?? "Not captured"} />
-                <FactItem
-                  icon={CalendarDays}
-                  label="Date joined"
-                  value={formatDate(drawerMember.employment_date)}
-                />
-                <FactItem
-                  label="Employment type"
-                  value={drawerMember.employment_type?.toUpperCase() ?? "Not captured"}
-                />
-                <FactItem
-                  icon={IdCard}
-                  label="TSC number"
-                  value={drawerMember.tsc_number ?? "Not captured"}
-                />
-                <FactItem
-                  icon={IdCard}
-                  label="National ID"
-                  value={drawerMember.national_id ?? "Not captured"}
-                />
+                <FactItem icon={CalendarDays} label="Date joined" value={formatDate(drawerMember.employment_date)} />
+                <FactItem label="Employment type" value={drawerMember.employment_type?.toUpperCase() ?? "Not captured"} />
+                <FactItem icon={IdCard} label="TSC number" value={drawerMember.tsc_number ?? "Not captured"} />
+                <FactItem icon={IdCard} label="National ID" value={drawerMember.national_id ?? "Not captured"} />
+              </div>
+              <div className="border-t border-border/70 pt-3">
                 <FactItem
                   label="Class teacher assignment"
                   value={
@@ -753,7 +742,7 @@ function FactItem({
   value: string;
 }) {
   return (
-    <div className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0">
+    <div className="flex min-h-[68px] items-start gap-2.5 rounded-lg border border-border/70 bg-muted/20 p-3">
       {Icon ? (
         <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
       ) : (
@@ -882,6 +871,8 @@ function EditStaffDialog({
   const [form, setForm] = useState({
     full_name: staff.full_name,
     tsc_number: staff.tsc_number ?? "",
+    gender: staff.gender ?? "",
+    photo_url: staff.photo_url ?? null,
     job_title: staff.job_title ?? "",
     employment_type: staff.employment_type ?? "bom",
     phone: staff.phone ?? "",
@@ -938,6 +929,8 @@ function EditStaffDialog({
         .update({
           full_name: form.full_name.trim(),
           tsc_number: form.tsc_number.trim() || null,
+          gender: form.gender || null,
+          photo_url: form.photo_url,
           job_title: form.job_title.trim() || null,
           employment_type: form.employment_type,
           phone: form.phone ? normalizeKePhone(form.phone) : null,
@@ -1016,11 +1009,30 @@ function EditStaffDialog({
         <section className="rounded-xl border border-border/80 bg-card/70 p-4 shadow-sm">
           <SectionHeading title="Identity" />
           <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <PhotoUploader
+                value={form.photo_url}
+                name={form.full_name}
+                onChange={(photo_url) => set("photo_url", photo_url)}
+                size="md"
+              />
+            </div>
             <FieldRow label="Full name *" error={errors.full_name}>
               <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} />
             </FieldRow>
             <FieldRow label="TSC number">
               <Input value={form.tsc_number} onChange={(e) => set("tsc_number", e.target.value)} />
+            </FieldRow>
+            <FieldRow label="Gender">
+              <Select value={form.gender} onValueChange={(value) => set("gender", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="male">Male</SelectItem>
+                </SelectContent>
+              </Select>
             </FieldRow>
           </div>
         </section>

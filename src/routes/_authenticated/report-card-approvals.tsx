@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/report-card-approvals")({
     ],
   }),
   component: () => (
-    <RequireSchool roles={["principal", "deputy", "super_admin"]}>
+    <RequireSchool roles={["admin", "exam_officer", "principal", "deputy", "super_admin"]}>
       <ReportCardApprovalsPage />
     </RequireSchool>
   ),
@@ -114,6 +114,49 @@ function ReportCardApprovalsPage() {
       toast.error("Could not approve report card.", { description: error.message }),
   });
 
+  const approveAll = useMutation({
+    mutationFn: async () => {
+      if (rows.length === 0) throw new Error("There are no report cards awaiting approval.");
+      if (!window.confirm(`Approve and publish all ${rows.length} report cards?`)) return 0;
+      let approvedCount = 0;
+      for (const card of rows) {
+        const { data, error } = await supabase
+          .from("report_cards")
+          .update({
+            status: "published",
+            published_at: new Date().toISOString(),
+            published_by: school.userId,
+          })
+          .eq("id", card.id)
+          .eq("status", "draft")
+          .select("id");
+        if (error) throw error;
+        if (data?.length) {
+          approvedCount++;
+          await supabase.from("audit_logs").insert({
+            school_id: schoolId,
+            actor_id: school.userId,
+            actor_name: school.fullName,
+            action: "update",
+            entity: "report_card",
+            entity_id: card.id,
+            before_data: { status: "draft" },
+            after_data: { status: "published" },
+          });
+        }
+      }
+      return approvedCount;
+    },
+    onSuccess: (count) => {
+      if (count === 0) return;
+      toast.success(`${count} report card${count === 1 ? "" : "s"} approved and published.`);
+      void qc.invalidateQueries({ queryKey: ["report-card-approvals", schoolId] });
+      void qc.invalidateQueries({ queryKey: ["report-cards", schoolId] });
+    },
+    onError: (error: Error) =>
+      toast.error("Could not approve all report cards.", { description: error.message }),
+  });
+
   const rows = cards.data ?? [];
   const columns: Column<(typeof rows)[number]>[] = [
     {
@@ -169,6 +212,11 @@ function ReportCardApprovalsPage() {
         title="Report card approvals"
         description="Review draft report cards and publish approved cards for learners and families."
         icon={FileCheck2}
+        actions={
+          <Button onClick={() => approveAll.mutate()} disabled={approveAll.isPending || rows.length === 0}>
+            <CheckCheck className="mr-2 size-4" /> Approve all ({rows.length})
+          </Button>
+        }
       />
       <DataTable
         rows={rows}

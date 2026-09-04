@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { CheckCheck, ClipboardCheck, Download, Info, Lock, Save, Send, Upload } from "lucide-react";
+import { ClipboardCheck, Download, Info, Lock, Save, Send, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/app-shell";
 import { RequireSchool } from "@/components/require-school";
@@ -18,14 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -45,12 +37,12 @@ export const Route = createFileRoute("/_authenticated/marks")({
       { title: "Marks entry · SHANSCOTT CBE" },
       {
         name: "description",
-        content: "Grade-adaptive CBE marks entry with KJSEA and KPSEA rules, approval and locking.",
+        content: "Grade-adaptive CBE marks entry with KJSEA and KPSEA rules, submission and locking.",
       },
       { property: "og:title", content: "Marks entry · SHANSCOTT CBE" },
       {
         property: "og:description",
-        content: "Enter, submit, approve and lock assessment marks with server-side validation.",
+        content: "Enter and submit assessment marks for review with server-side validation.",
       },
     ],
   }),
@@ -91,7 +83,6 @@ function MarksPage() {
   const [streamId, setStreamId] = useState("");
   const [assessmentId, setAssessmentId] = useState("");
   const [drafts, setDrafts] = useState<Record<string, MarkDraft>>({});
-  const [approveAllOpen, setApproveAllOpen] = useState(false);
 
   const streams = useQuery({
     queryKey: ["marks-streams", schoolId, grade, school.academicYearId],
@@ -163,26 +154,6 @@ function MarksPage() {
       return data;
     },
   });
-
-  const matchingSubmittedAssessments = (assessments.data ?? []).filter(
-    (candidate) =>
-      candidate.status === "submitted" &&
-      candidate.title === assessment?.title &&
-      candidate.learning_area_id === assessment?.learning_area_id &&
-      candidate.assessment_type === assessment?.assessment_type &&
-      candidate.assessment_date === assessment?.assessment_date &&
-      candidate.max_score === assessment?.max_score,
-  );
-  const streamAssessments = matchingSubmittedAssessments.filter((candidate) => candidate.stream_id);
-  const approveAllAssessments = streamAssessments.length > 0 ? streamAssessments : matchingSubmittedAssessments;
-  const approveAllLearnerCount = approveAllAssessments.reduce(
-    (total, candidate) =>
-      total +
-      (allGradeLearners.data ?? []).filter(
-        (learner) => !candidate.stream_id || learner.current_stream_id === candidate.stream_id,
-      ).length,
-    0,
-  );
 
   const marks = useQuery({
     queryKey: ["marks", assessmentId],
@@ -284,33 +255,6 @@ function MarksPage() {
     },
     onError: (e: Error) =>
       toast.error("Status change refused by the server.", { description: e.message }),
-  });
-
-  const approveAll = useMutation({
-    mutationFn: async () => {
-      if (!assessment || approveAllAssessments.length === 0) {
-        throw new Error("There are no submitted stream assessments to approve.");
-      }
-      for (const candidate of approveAllAssessments) {
-        const { data, error } = await supabase
-          .from("assessments")
-          .update({ status: "approved" })
-          .eq("school_id", schoolId)
-          .eq("id", candidate.id)
-          .eq("status", "submitted")
-          .select("id");
-        if (error) throw error;
-        if (!data?.length) {
-          throw new Error(`${candidate.title} changed before it could be approved.`);
-        }
-      }
-    },
-    onSuccess: () => {
-      setApproveAllOpen(false);
-      toast.success(`${approveAllAssessments.length} assessment${approveAllAssessments.length === 1 ? "" : "s"} approved.`);
-      void qc.invalidateQueries({ queryKey: ["assessments", schoolId] });
-    },
-    onError: (e: Error) => toast.error("Could not approve all marks.", { description: e.message }),
   });
 
   function exportMarks() {
@@ -503,18 +447,6 @@ function MarksPage() {
                   <Send className="mr-2 size-4" /> Submit for approval
                 </Button>
               )}
-              {assessment.status === "submitted" && isAdmin && (
-                <>
-                  <Button size="sm" onClick={() => setStatus.mutate("approved")}>
-                    <CheckCheck className="mr-2 size-4" /> Approve
-                  </Button>
-                  {approveAllAssessments.length > 1 && (
-                    <Button size="sm" variant="secondary" onClick={() => setApproveAllOpen(true)}>
-                      <CheckCheck className="mr-2 size-4" /> Approve all
-                    </Button>
-                  )}
-                </>
-              )}
               {assessment.status === "approved" && isAdmin && (
                 <Button size="sm" variant="destructive" onClick={() => setStatus.mutate("locked")}>
                   <Lock className="mr-2 size-4" /> Lock permanently
@@ -628,37 +560,6 @@ function MarksPage() {
           </CardContent>
         </Card>
       )}
-      <Dialog open={approveAllOpen} onOpenChange={setApproveAllOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Approve all submitted marks?</DialogTitle>
-            <DialogDescription>
-              This final action will approve {assessment?.title} for {GRADE_LABELS[grade as CbeGrade]}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 text-sm">
-            {approveAllAssessments.map((candidate) => {
-              const stream = streams.data?.find((item) => item.id === candidate.stream_id);
-              const learnerCount = (allGradeLearners.data ?? []).filter(
-                (learner) => !candidate.stream_id || learner.current_stream_id === candidate.stream_id,
-              ).length;
-              return (
-                <div key={candidate.id} className="flex items-center justify-between rounded-md border px-3 py-2">
-                  <span>{GRADE_LABELS[candidate.grade]} {stream?.name ?? "all streams"}</span>
-                  <span className="text-muted-foreground">{learnerCount} learners</span>
-                </div>
-              );
-            })}
-            <p className="pt-2 font-medium">{approveAllLearnerCount} learners total</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setApproveAllOpen(false)}>Cancel</Button>
-            <Button onClick={() => approveAll.mutate()} disabled={approveAll.isPending}>
-              <CheckCheck className="mr-2 size-4" /> Approve all
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

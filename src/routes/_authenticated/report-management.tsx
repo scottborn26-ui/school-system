@@ -23,7 +23,7 @@ import { supabase } from "@/lib/supabase";
 export const Route = createFileRoute("/_authenticated/report-management")({
   head: () => ({ meta: [{ title: "Report office · SHANSCOTT CBE" }] }),
   component: () => (
-    <RequireSchool roles={["admin", "exam_officer"]}>
+    <RequireSchool roles={["admin", "exam_officer", "principal", "deputy", "super_admin"]}>
       <ReportManagementPage />
     </RequireSchool>
   ),
@@ -45,7 +45,7 @@ function ReportManagementPage() {
   const school = useSchool();
   const qc = useQueryClient();
   const schoolId = school.schoolId!;
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState("published");
   const [grade, setGrade] = useState("all");
   const [term, setTerm] = useState(school.termId ?? "all");
 
@@ -216,7 +216,7 @@ function ReportManagementPage() {
         onReset={() => {
           setTerm(school.termId ?? "all");
           setGrade("all");
-          setStatus("all");
+          setStatus("published");
         }}
         emptyTitle="No report cards found"
         emptyDescription="Adjust the filters or generate report cards from the Report Cards page."

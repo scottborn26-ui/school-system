@@ -169,7 +169,7 @@ function TimetablePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("learning_areas")
-        .select("id, name, code")
+        .select("id, name, code, grades")
         .eq("school_id", schoolId);
       if (error) throw error;
       return data;
@@ -350,15 +350,21 @@ function TimetablePage() {
     mutationFn: async (input: { id: string; day: number; period: number }) => {
       const { data: movingSlot, error: movingSlotError } = await supabase
         .from("timetable_slots")
-        .select("stream_id, staff_id, room_id")
+        .select("timetable_id, school_id, day_of_week, period_index, stream_id, staff_id, room_id")
         .eq("id", input.id)
         .single();
       if (movingSlotError) throw movingSlotError;
+      if (
+        movingSlot.day_of_week === input.day &&
+        movingSlot.period_index === input.period
+      )
+        return;
 
       const { data: targetSlots, error: targetError } = await supabase
         .from("timetable_slots")
-        .select("id, stream_id, staff_id, room_id")
-        .eq("timetable_id", current?.id)
+        .select("id, stream_id, staff_id, room_id, day_of_week, period_index")
+        .eq("timetable_id", movingSlot.timetable_id)
+        .eq("school_id", movingSlot.school_id)
         .eq("day_of_week", input.day)
         .eq("period_index", input.period)
         .neq("id", input.id);
@@ -367,17 +373,25 @@ function TimetablePage() {
       const target = targetSlots?.find(
         (slot) =>
           slot.stream_id === movingSlot.stream_id ||
-          (slot.staff_id && slot.staff_id === movingSlot.staff_id) ||
-          (slot.room_id && slot.room_id === movingSlot.room_id),
+          (slot.staff_id !== null && slot.staff_id === movingSlot.staff_id) ||
+          (slot.room_id !== null && slot.room_id === movingSlot.room_id),
       );
       if (target) {
+        const conflictingStream = streams.data?.find((stream) => stream.id === target.stream_id);
+        const conflictingStreamName = conflictingStream
+          ? `${GRADE_LABELS[conflictingStream.grade as CbeGrade]} ${conflictingStream.name}`
+          : "another class";
+        const targetDayName = DAYS.find((day) => day.value === input.day)?.label ?? `day ${input.day}`;
+        const targetPeriodName =
+          periods.data?.find((period) => period.period_index === input.period)?.label ??
+          `period ${input.period}`;
         const reason =
           target.stream_id === movingSlot.stream_id
-            ? "this class"
-            : target.staff_id === movingSlot.staff_id
-              ? "this teacher"
+            ? `this class on ${targetDayName}, ${targetPeriodName}`
+            : target.staff_id !== null && target.staff_id === movingSlot.staff_id
+              ? `this teacher in ${conflictingStreamName}`
               : "this room";
-        throw new Error(`That period is already occupied by ${reason}. Check the teacher or room timetable.`);
+        throw new Error(`That period is already occupied by ${reason}.`);
       }
 
       const { error } = await supabase
@@ -502,6 +516,17 @@ function TimetablePage() {
   const areaName = (id: string | null) => areas.data?.find((a) => a.id === id)?.name ?? "—";
   const staffName = (id: string | null) => staff.data?.find((s) => s.id === id)?.full_name ?? "—";
   const teachingPeriods = (periods.data ?? []).filter((p) => !p.is_break);
+  const gradeLearningAreas = (areas.data ?? []).filter(
+    (area) => stream?.grade && area.grades.includes(stream.grade),
+  );
+  const availableCellAreas = editingCell?.slot?.learning_area_id
+    ? gradeLearningAreas.some((area) => area.id === editingCell.slot.learning_area_id)
+      ? gradeLearningAreas
+      : [
+          ...(areas.data ?? []).filter((area) => area.id === editingCell.slot.learning_area_id),
+          ...gradeLearningAreas,
+        ]
+    : gradeLearningAreas;
 
   const slotAt = (day: number, period: number) =>
     (slots.data ?? []).find((s) =>
@@ -525,6 +550,14 @@ function TimetablePage() {
   function openCellEditor(day: number, period: any, slot: any | null) {
     setEditingCell({ day, period, slot });
     setCellForm({ area: slot?.learning_area_id ?? "", teacher: slot?.staff_id ?? "" });
+  }
+
+  function assignedTeacherForArea(areaId: string) {
+    return (
+      allocations.data?.find(
+        (allocation) => allocation.stream_id === streamId && allocation.learning_area_id === areaId,
+      )?.staff_id ?? ""
+    );
   }
 
   // Teacher load summary (a simple reconciliation view)
@@ -943,13 +976,18 @@ function TimetablePage() {
               <Label>Learning area</Label>
               <Select
                 value={cellForm.area}
-                onValueChange={(value) => setCellForm((form) => ({ ...form, area: value }))}
+                onValueChange={(value) =>
+                  setCellForm((form) => ({
+                    area: value,
+                    teacher: assignedTeacherForArea(value) || form.teacher,
+                  }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select subject" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(areas.data ?? []).map((area) => (
+                  {availableCellAreas.map((area) => (
                     <SelectItem key={area.id} value={area.id}>
                       {area.name}
                     </SelectItem>

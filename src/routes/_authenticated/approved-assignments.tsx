@@ -24,6 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useSchool } from "@/hooks/use-school";
 import { GRADE_LABELS, type CbeGrade } from "@/lib/cbe";
 import { supabase } from "@/lib/supabase";
@@ -43,12 +51,12 @@ type AssignmentRow = {
 export const Route = createFileRoute("/_authenticated/approved-assignments")({
   head: () => ({
     meta: [
-      { title: "Approved assignments · SHANSCOTT CBE" },
-      { name: "description", content: "View approved assignments grouped by grade." },
+      { title: "Approved marks · SHANSCOTT CBE" },
+      { name: "description", content: "View approved marks grouped by grade." },
     ],
   }),
   component: () => (
-    <RequireSchool roles={["principal", "deputy", "teacher", "class_teacher", "super_admin"]}>
+    <RequireSchool roles={["exam_officer", "principal", "deputy", "super_admin"]}>
       <ApprovedAssignmentsPage />
     </RequireSchool>
   ),
@@ -58,7 +66,7 @@ function ApprovedAssignmentsPage() {
   const school = useSchool();
   const qc = useQueryClient();
   const schoolId = school.schoolId!;
-  const isAdmin = school.can("principal", "deputy", "super_admin");
+  const isAdmin = school.can("exam_officer", "principal", "deputy", "super_admin");
   const [gradeFilter, setGradeFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [viewing, setViewing] = useState<AssignmentRow | null>(null);
@@ -109,12 +117,26 @@ function ApprovedAssignmentsPage() {
     },
   });
 
+  const learners = useQuery({
+    queryKey: ["approved-assignment-learners", schoolId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("learners")
+        .select("id, admission_number, first_name, middle_name, last_name, current_grade, current_stream_id")
+        .eq("school_id", schoolId)
+        .eq("is_archived", false)
+        .order("last_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const marks = useQuery({
     queryKey: ["approved-assignment-marks", schoolId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("marks")
-        .select("assessment_id, learner_id, raw_score, is_absent, is_exempt")
+        .select("assessment_id, learner_id, raw_score, percentage, is_absent, is_exempt")
         .eq("school_id", schoolId);
       if (error) throw error;
       return data ?? [];
@@ -380,30 +402,28 @@ function ApprovedAssignmentsPage() {
             <DialogTitle>{viewing?.title}</DialogTitle>
           </DialogHeader>
           {viewing && (
-            <div className="grid gap-3 text-sm sm:grid-cols-2">
-              <div>
-                <span className="text-muted-foreground">Grade</span>
-                <p className="font-medium">{GRADE_LABELS[viewing.grade]}</p>
+            <div className="space-y-4">
+              <div className="grid gap-3 text-sm sm:grid-cols-2">
+                <div><span className="text-muted-foreground">Grade</span><p className="font-medium">{GRADE_LABELS[viewing.grade]}</p></div>
+                <div><span className="text-muted-foreground">Learning area</span><p className="font-medium">{areaName(viewing.learning_area_id)}</p></div>
+                <div><span className="text-muted-foreground">Applies to</span><p className="font-medium">{streamLabel(viewing)}</p></div>
+                <div><span className="text-muted-foreground">Maximum score</span><p className="font-medium">{viewing.max_score}</p></div>
+                <div><span className="text-muted-foreground">Date</span><p className="font-medium">{viewing.assessment_date}</p></div>
+                <div><span className="text-muted-foreground">Status</span><p className="font-medium capitalize">{viewing.status}</p></div>
               </div>
-              <div>
-                <span className="text-muted-foreground">Learning area</span>
-                <p className="font-medium">{areaName(viewing.learning_area_id)}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Applies to</span>
-                <p className="font-medium">{streamLabel(viewing)}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Maximum score</span>
-                <p className="font-medium">{viewing.max_score}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Date</span>
-                <p className="font-medium">{viewing.assessment_date}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Status</span>
-                <p className="font-medium capitalize">{viewing.status}</p>
+              <div className="max-h-[45vh] overflow-auto rounded-lg border">
+                <Table>
+                  <TableHeader><TableRow><TableHead>Adm. no.</TableHead><TableHead>Learner</TableHead><TableHead>Mark</TableHead><TableHead>Percentage</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                  <TableBody>
+                    {(learners.data ?? [])
+                      .filter((learner) => learner.current_grade === viewing.grade && (!viewing.stream_id || learner.current_stream_id === viewing.stream_id))
+                      .map((learner) => {
+                        const mark = marks.data?.find((item) => item.assessment_id === viewing.id && item.learner_id === learner.id);
+                        const status = mark?.is_absent ? "Absent" : mark?.is_exempt ? "Exempt" : mark?.raw_score !== null && mark?.raw_score !== undefined ? "Marked" : "Not marked";
+                        return <TableRow key={learner.id}><TableCell className="font-mono text-xs">{learner.admission_number}</TableCell><TableCell className="font-medium">{learner.first_name} {learner.middle_name ?? ""} {learner.last_name}</TableCell><TableCell>{mark?.raw_score ?? "—"} / {viewing.max_score}</TableCell><TableCell>{mark?.percentage !== null && mark?.percentage !== undefined ? `${mark.percentage}%` : "—"}</TableCell><TableCell><Badge variant={status === "Marked" ? "default" : "outline"}>{status}</Badge></TableCell></TableRow>;
+                      })}
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}

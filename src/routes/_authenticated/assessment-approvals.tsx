@@ -75,7 +75,7 @@ function AssessmentApprovalsPage() {
   const [editMaxScore, setEditMaxScore] = useState("100");
 
   const assessments = useQuery({
-    queryKey: ["assessment-approvals", schoolId, school.academicYearId, school.termId],
+    queryKey: ["assessment-approvals", schoolId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("assessments")
@@ -134,7 +134,7 @@ function AssessmentApprovalsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("marks")
-        .select("assessment_id, learner_id, raw_score, is_absent, is_exempt")
+        .select("assessment_id, learner_id, raw_score, percentage, is_absent, is_exempt")
         .eq("school_id", schoolId);
       if (error) throw error;
       return data ?? [];

@@ -9,6 +9,9 @@ CREATE OR REPLACE FUNCTION public.create_staff_account(
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   staff_id uuid;
+  generated_staff_number text;
+  school_code text;
+  year_code text;
   selected_stream_id uuid;
   selected_grade public.cbe_grade;
   selected_grades public.cbe_grade[];
@@ -24,6 +27,21 @@ BEGIN
   IF EXISTS (SELECT 1 FROM public.staff WHERE lower(email) = lower(_staff->>'email')) THEN
     RAISE EXCEPTION 'That email is already used by a staff record';
   END IF;
+
+  SELECT rpad(upper(left(regexp_replace(COALESCE(NULLIF(s.short_name, ''), s.name), '[^A-Za-z]', '', 'g'), 3)), 3, 'X')
+  INTO school_code FROM public.schools s WHERE s.id = _school_id;
+  IF school_code IS NULL THEN RAISE EXCEPTION 'School could not be found'; END IF;
+
+  SELECT COALESCE((regexp_match(ay.name, '((19|20)[0-9]{2})'))[1], to_char(current_date, 'YYYY'))
+  INTO year_code FROM public.academic_years ay
+  WHERE ay.school_id = _school_id AND ay.is_current AND NOT ay.is_archived
+  ORDER BY ay.start_date DESC LIMIT 1;
+  year_code := COALESCE(year_code, to_char(current_date, 'YYYY'));
+
+  LOOP
+    generated_staff_number := school_code || year_code || lpad(floor(random() * 1000)::integer::text, 3, '0');
+    EXIT WHEN NOT EXISTS (SELECT 1 FROM public.staff WHERE school_id = _school_id AND staff_number = generated_staff_number);
+  END LOOP;
 
   selected_stream_id := NULLIF(_staff->>'class_teacher_stream_id', '')::uuid;
   selected_grade := NULLIF(_staff->>'class_teacher_grade', '')::public.cbe_grade;
@@ -48,7 +66,7 @@ BEGIN
     employment_type, phone, email, employment_date, assigned_grade, assigned_grades, class_teacher_grade, status, is_archived,
     must_change_password, invited_at, account_status, credentials_expires_at
   ) VALUES (
-    _school_id, _user_id, NULL, _staff->>'full_name',
+    _school_id, _user_id, generated_staff_number, _staff->>'full_name',
     NULLIF(_staff->>'tsc_number', ''), NULLIF(_staff->>'national_id', ''), NULLIF(_staff->>'gender', ''),
     NULLIF(_staff->>'job_title', ''), NULLIF(_staff->>'employment_type', ''), NULLIF(_staff->>'phone', ''),
     lower(_staff->>'email'), NULLIF(_staff->>'employment_date', '')::date,

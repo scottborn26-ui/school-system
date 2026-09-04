@@ -34,6 +34,7 @@ import { useSchool } from "@/hooks/use-school";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { LeavingCertificateDialog } from "@/components/leaving-certificate-dialog";
 import { PhotoUploader } from "@/components/photo-uploader";
+import { SchoolLogo } from "@/components/school-logo";
 import {
   formatSeniorPathwaySummary,
   isSeniorSchoolGrade,
@@ -160,8 +161,19 @@ function LearnerProfilePage() {
     : null;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="learner-profile mx-auto max-w-7xl space-y-6">
+      <div className="hidden flex-col items-center border-b border-slate-200 pb-5 text-center print:flex">
+        <SchoolLogo
+          logoUrl={school.school?.logo_url}
+          schoolName={school.school?.name}
+          shortName={school.school?.short_name}
+          className="size-20"
+          imageClassName="rounded-none"
+        />
+        <div className="mt-2 text-lg font-bold text-slate-900">{school.school?.name ?? "School"}</div>
+        <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Learner profile</div>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild aria-label="Back to learner register">
             <Link to="/learners"><ArrowLeft className="size-5" /></Link>
@@ -174,8 +186,8 @@ function LearnerProfilePage() {
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.85fr_1fr]">
-        <Card className="border-slate-200 shadow-sm">
+      <div className="grid gap-5 lg:grid-cols-[1.85fr_1fr] print:hidden">
+        <Card className="overflow-hidden border-slate-200 bg-gradient-to-br from-white via-white to-sky-50/60 shadow-sm">
           <CardContent className="p-5 sm:p-7">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
             <PhotoUploader
@@ -198,7 +210,7 @@ function LearnerProfilePage() {
                   <Badge className="rounded-full bg-green-100 px-3 py-1 text-green-700 hover:bg-green-100">{statusLabel}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">Admission No: {learner.admission_number}</p>
-                <div className="mt-6 grid gap-x-5 gap-y-5 sm:grid-cols-2">
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
                   <ProfileFact icon={Calendar} label="Class" value={placement} />
                   <ProfileFact icon={Calendar} label="Date of Birth" value={`${formatDate(learner.date_of_birth)}${age !== null ? ` (${age} years)` : ""}`} />
                   <ProfileFact icon={ClipboardList} label="Gender" value={learner.gender} />
@@ -211,24 +223,77 @@ function LearnerProfilePage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border shadow-sm">
-          <CardHeader className="pb-2"><CardTitle className="text-lg text-foreground">Academic Information</CardTitle></CardHeader>
+        <Card className="border-border bg-slate-950 text-white shadow-sm">
+          <CardHeader className="pb-2"><CardTitle className="text-lg text-white">Academic overview</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <ProfileRow label="Class" value={learner.current_grade} />
-            <ProfileRow label="Stream" value={currentEnrollment?.streams?.name} />
+            <ProfileRow label="Class" value={learner.current_grade} dark />
+            <ProfileRow label="Stream" value={currentEnrollment?.streams?.name} dark />
             {isSeniorSchoolGrade(learner.current_grade) ? (
-              <ProfileRow label="Pathway" value={seniorPathwaySummary} />
+              <ProfileRow label="Pathway" value={seniorPathwaySummary} dark />
             ) : null}
-            <ProfileRow label="Class Teacher" value={null} />
-            <ProfileRow label="Subjects" value="Not captured" />
-            <ProfileRow label="Date of Admission" value={formatDate(learner.admission_date)} />
-            <ProfileRow label="Status" value={statusLabel} status={learner.status === "active"} />
+            <ProfileRow label="Class Teacher" value={null} dark />
+            <ProfileRow label="Subjects" value="Not captured" dark />
+            <ProfileRow label="Date of Admission" value={formatDate(learner.admission_date)} dark />
+            <ProfileRow label="Status" value={statusLabel} status={learner.status === "active"} dark />
           </CardContent>
         </Card>
       </div>
 
+      <section className="hidden print:block">
+        <div className="mb-5 border-b border-slate-300 pb-3">
+          <h1 className="text-xl font-bold text-slate-900">{fullName}</h1>
+          <p className="mt-1 text-sm text-slate-600">Admission {learner.admission_number} · {statusLabel}</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <PrintSection title="Personal information">
+            <PrintField label="Full name" value={fullName} />
+            <PrintField label="Gender" value={learner.gender} />
+            <PrintField label="Date of birth" value={formatDate(learner.date_of_birth)} />
+            <PrintField label="Phone number" value={learner.emergency_contact_phone} />
+            <PrintField label="Nationality" value={learner.nationality} />
+            <PrintField label="Religion" value={learner.religion} />
+          </PrintSection>
+          <PrintSection title="Admission and placement">
+            <PrintField label="Admission number" value={learner.admission_number} />
+            <PrintField label="UPI" value={learner.upi_number} />
+            <PrintField label="Assessment number" value={learner.assessment_number} />
+            <PrintField label="Birth certificate" value={learner.birth_certificate_no} />
+            <PrintField label="Class" value={learner.current_grade} />
+            <PrintField label="Stream" value={currentEnrollment?.streams?.name ?? "Class stream"} />
+            <PrintField label="Admission date" value={formatDate(learner.admission_date)} />
+            <PrintField label="Boarding status" value={learner.boarding_status} />
+            <PrintField label="Transport route" value={learner.transport_route} />
+          </PrintSection>
+          <PrintSection title="Parent / guardian">
+            <PrintField label="Name" value={learner.emergency_contact_name} />
+            <PrintField label="Relationship" value={learner.emergency_contact_relationship} />
+            <PrintField label="Phone" value={learner.emergency_contact_phone} />
+          </PrintSection>
+          <PrintSection title="Academic overview">
+            <PrintField label="Current class" value={placement} />
+            <PrintField label="Pathway" value={seniorPathwaySummary} />
+            <PrintField label="Average score" value="Not available" />
+            <PrintField label="Assessments" value="No scores yet" />
+            <PrintField label="Attendance" value="No records yet" />
+            <PrintField label="Position" value="Not available" />
+          </PrintSection>
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <PrintSection title="Enrollment history">
+            {data.enrollments.length ? data.enrollments.map((item: any) => (
+              <PrintField key={item.id} label={formatDate(item.effective_date)} value={`${item.grade}${item.streams?.name ? ` · ${item.streams.name}` : ""}`} />
+            )) : <PrintField label="Records" value="No enrollment history recorded" />}
+          </PrintSection>
+          <PrintSection title="Status history">
+            {data.statuses.length ? data.statuses.map((item: any) => (
+              <PrintField key={item.id} label={formatDate(item.effective_date)} value={String(item.new_status).replaceAll("_", " ")} />
+            )) : <PrintField label="Records" value="No status changes recorded" />}
+          </PrintSection>
+        </div>
+      </section>
+
       <Tabs defaultValue="personal" className="space-y-5">
-        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-transparent p-1">
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-transparent p-1 print:hidden">
           {[
             ["overview", "Overview"],
             ["personal", "Personal"],
@@ -399,6 +464,22 @@ function Summary({ label, value }: { label: string; value: unknown }) {
     </div>
   );
 }
+function PrintSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border border-slate-300 p-3">
+      <h2 className="mb-3 border-b border-slate-200 pb-2 text-sm font-bold text-slate-900">{title}</h2>
+      <div className="grid gap-x-5 gap-y-2 sm:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+function PrintField({ label, value }: { label: string; value: unknown }) {
+  return (
+    <div className="text-sm">
+      <span className="font-medium text-slate-500">{label}: </span>
+      <span className="capitalize text-slate-900">{String(value || "Not captured")}</span>
+    </div>
+  );
+}
 function ProfileFact({
   icon: Icon,
   label,
@@ -412,8 +493,8 @@ function ProfileFact({
 }) {
   return (
     <div className={wide ? "sm:col-span-2" : ""}>
-      <div className="flex items-start gap-3">
-        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500">
+      <div className="flex min-h-[64px] items-start gap-3 rounded-xl border border-slate-200/80 bg-white/80 p-3 shadow-sm">
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-sky-100 text-sky-700">
           <Icon className="size-4" />
         </span>
         <div className="min-w-0">
@@ -424,14 +505,14 @@ function ProfileFact({
     </div>
   );
 }
-function ProfileRow({ label, value, status = false }: { label: string; value: unknown; status?: boolean }) {
+function ProfileRow({ label, value, status = false, dark = false }: { label: string; value: unknown; status?: boolean; dark?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3 text-sm last:border-0 last:pb-0">
-      <span className="text-muted-foreground">{label}</span>
+    <div className={`flex items-center justify-between gap-4 border-b pb-3 text-sm last:border-0 last:pb-0 ${dark ? "border-white/10" : "border-slate-100"}`}>
+      <span className={dark ? "text-slate-400" : "text-muted-foreground"}>{label}</span>
       {status ? (
         <Badge className="rounded-full bg-green-100 text-green-700 hover:bg-green-100">{String(value)}</Badge>
       ) : (
-        <span className="text-right font-semibold text-slate-800">{String(value || "Not captured")}</span>
+        <span className={`text-right font-semibold ${dark ? "text-white" : "text-slate-800"}`}>{String(value || "Not captured")}</span>
       )}
     </div>
   );

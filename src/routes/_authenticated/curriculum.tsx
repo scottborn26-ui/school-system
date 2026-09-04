@@ -271,29 +271,7 @@ function CurriculumPage() {
 
   const deleteArea = useMutation({
     mutationFn: async (areaId: string) => {
-      const [allocationsResult, assessmentsResult, combinationResult] = await Promise.all([
-        supabase.from("teacher_allocations").select("id").eq("learning_area_id", areaId).limit(1),
-        supabase.from("assessments").select("id").eq("learning_area_id", areaId).limit(1),
-        supabase
-          .from("subject_combination_learning_areas")
-          .select("id")
-          .eq("learning_area_id", areaId)
-          .limit(1),
-      ]);
-
-      const blockers = [
-        allocationsResult.data?.length ? "teacher allocations" : null,
-        assessmentsResult.data?.length ? "assessments" : null,
-        combinationResult.data?.length ? "senior pathway combinations" : null,
-      ].filter(Boolean) as string[];
-
-      if (blockers.length > 0) {
-        throw new Error(
-          `This learning area is still linked to ${blockers.join(", ")}. Remove those references before deleting it.`,
-        );
-      }
-
-      const { error } = await supabase.from("learning_areas").delete().eq("id", areaId);
+      const { error } = await supabase.rpc("delete_learning_area", { _learning_area_id: areaId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -343,6 +321,20 @@ function CurriculumPage() {
       return data ?? [];
     },
   });
+
+  const visibleAllocationAreas = useMemo(
+    () =>
+      (allocationAreas.data ?? []).filter(
+        (area) => allocGrade && area.grades.includes(allocGrade),
+      ),
+    [allocationAreas.data, allocGrade],
+  );
+
+  useEffect(() => {
+    if (allocArea && !visibleAllocationAreas.some((area) => area.id === allocArea)) {
+      setAllocArea("");
+    }
+  }, [allocArea, visibleAllocationAreas]);
 
   const createAllocation = useMutation({
     mutationFn: async () => {
@@ -1092,12 +1084,12 @@ function CurriculumPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className={cn(!allocGrade && "text-muted-foreground")}>Learning area</Label>
-                      <Select value={allocArea} onValueChange={(value) => { setAllocArea(value); setAllocPeriods("4"); }} disabled={!allocGrade}>
-                        <SelectTrigger className={!allocGrade ? "border-muted bg-muted/40 text-muted-foreground" : undefined}>
-                          <SelectValue placeholder={allocGrade ? "Select learning area" : "Select a grade first"} />
+                      <Select value={allocArea} onValueChange={(value) => { setAllocArea(value); setAllocPeriods("4"); }} disabled={!allocGrade || !allocStream}>
+                        <SelectTrigger className={!allocGrade || !allocStream ? "border-muted bg-muted/40 text-muted-foreground" : undefined}>
+                          <SelectValue placeholder={!allocGrade ? "Select a grade first" : !allocStream ? "Select a stream first" : "Select learning area"} />
                         </SelectTrigger>
                         <SelectContent>
-                          {allocationAreas.isLoading ? <SelectItem value="loading" disabled>Loading learning areas…</SelectItem> : allocationAreas.data?.map((a) => (
+                          {allocationAreas.isLoading ? <SelectItem value="loading" disabled>Loading learning areas…</SelectItem> : visibleAllocationAreas.length === 0 ? <SelectItem value="empty" disabled>No learning areas for this grade</SelectItem> : visibleAllocationAreas.map((a) => (
                             <SelectItem key={a.id} value={a.id}>
                               {a.name}
                             </SelectItem>
@@ -1145,7 +1137,7 @@ function CurriculumPage() {
                       <Badge variant="secondary">{gradeCount} {gradeCount === 1 ? "allocation" : "allocations"}</Badge>
                     </button>
                     {gradeOpen && <div className="space-y-2 border-t p-3 sm:p-4">
-                      {group.streams.length === 0 && <div className="px-3 py-4 text-sm text-muted-foreground">No active streams for this grade. <button type="button" className="font-medium text-primary hover:underline" onClick={() => setAllocOpen(true)}>+ Add allocation</button></div>}
+                      {group.streams.length === 0 && <div className="px-3 py-4 text-sm text-muted-foreground">No active streams for this grade. <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setAllocGrade(group.grade); setAllocStream(""); setAllocArea(""); setAllocOpen(true); }}>+ Add allocation</button></div>}
                       {group.streams.map(({ stream, allocations: streamAllocations }) => {
                         const streamOpen = allocStreamOpen[stream.id] ?? false;
                         return (
@@ -1156,7 +1148,7 @@ function CurriculumPage() {
                               <Badge variant="outline">{streamAllocations.length} {streamAllocations.length === 1 ? "allocation" : "allocations"}</Badge>
                             </button>
                             {streamOpen && (streamAllocations.length === 0 ? (
-                              <div className="px-3 py-4 text-sm text-muted-foreground">No allocations for this stream. <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setAllocStream(stream.id); setAllocOpen(true); }}>+ Add allocation</button></div>
+                              <div className="px-3 py-4 text-sm text-muted-foreground">No allocations for this stream. <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setAllocGrade(group.grade); setAllocStream(stream.id); setAllocArea(""); setAllocOpen(true); }}>+ Add allocation</button></div>
                             ) : (
                               <div className="overflow-hidden rounded-md border">
                                 <div className="hidden grid-cols-[1.4fr_1fr_120px_100px] gap-3 bg-muted/35 px-3 py-2 text-xs font-medium text-muted-foreground sm:grid"><span>Learning area</span><span>Teacher</span><span className="text-right">Periods / week</span><span /></div>
@@ -1184,8 +1176,35 @@ function CurriculumPage() {
             </div>
           )}
 
-          <DetailPanel open={viewingAllocation !== null} onOpenChange={(open) => !open && setViewingAllocationId(null)} entityType="allocation" title={viewingAllocation ? areaName_(viewingAllocation.learning_area_id) : "Allocation"} subtitle={viewingAllocation ? streamLabel(viewingAllocation.stream_id) : undefined}>
-            {viewingAllocation && <div className="space-y-4 text-sm"><div><p className="text-xs uppercase tracking-wide text-muted-foreground">Learning area</p><p className="font-medium">{areaName_(viewingAllocation.learning_area_id)}</p></div><div><p className="text-xs uppercase tracking-wide text-muted-foreground">Teacher</p><p className="font-medium">{staffName(viewingAllocation.staff_id)}</p></div><div><p className="text-xs uppercase tracking-wide text-muted-foreground">Periods / week</p><p className="font-medium">{viewingAllocation.periods_per_week}</p></div><div><p className="text-xs uppercase tracking-wide text-muted-foreground">Academic year / term</p><p className="font-medium">{school.years.find((year) => year.id === viewingAllocation.academic_year_id)?.name ?? "Current academic year"} · {school.terms.find((term) => term.id === school.termId)?.name ?? "Current term"}</p></div><div><p className="text-xs uppercase tracking-wide text-muted-foreground">Generated timetable</p><p className="font-medium">{allocationSlots.filter((slot) => slot.stream_id === viewingAllocation.stream_id && slot.learning_area_id === viewingAllocation.learning_area_id).length} scheduled periods</p></div></div>}
+          <DetailPanel
+            open={viewingAllocation !== null}
+            onOpenChange={(open) => !open && setViewingAllocationId(null)}
+            entityType="allocation"
+            title={viewingAllocation ? areaName_(viewingAllocation.learning_area_id) : "Allocation"}
+            subtitle={viewingAllocation ? streamLabel(viewingAllocation.stream_id) : undefined}
+            onEdit={isCurriculumManager && viewingAllocation ? () => openAllocationEdit(viewingAllocation) : undefined}
+            onPrint={() => window.print()}
+          >
+            {viewingAllocation && (() => {
+              const scheduledCount = allocationSlots.filter((slot) => slot.stream_id === viewingAllocation.stream_id && slot.learning_area_id === viewingAllocation.learning_area_id).length;
+              return <div className="space-y-5">
+                <div className="rounded-xl border bg-gradient-to-br from-primary/10 via-background to-cyan-50/60 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Teacher allocation</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">{areaName_(viewingAllocation.learning_area_id)}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{streamLabel(viewingAllocation.stream_id)}</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border bg-card p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Teacher</p><p className="mt-2 font-semibold">{staffName(viewingAllocation.staff_id)}</p></div>
+                  <div className="rounded-lg border bg-card p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Periods / week</p><p className="mt-2 text-2xl font-semibold tabular-nums">{viewingAllocation.periods_per_week}</p></div>
+                </div>
+                <div className="rounded-lg border p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Academic year / term</p><p className="mt-2 font-medium">{school.years.find((year) => year.id === viewingAllocation.academic_year_id)?.name ?? "Current academic year"} · {school.terms.find((term) => term.id === school.termId)?.name ?? "Current term"}</p></div>
+                <div className={cn("rounded-lg border p-4", scheduledCount > 0 ? "border-emerald-200 bg-emerald-50/70" : "border-amber-200 bg-amber-50/70")}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Generated timetable</p>
+                  <p className="mt-2 font-semibold">{scheduledCount} scheduled {scheduledCount === 1 ? "period" : "periods"}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{scheduledCount > 0 ? "This allocation is included in the generated timetable." : "No timetable periods have been generated for this allocation yet."}</p>
+                </div>
+              </div>;
+            })()}
           </DetailPanel>
 
           <Dialog open={editingAllocation !== null} onOpenChange={(open) => !open && setEditingAllocationId(null)}><DialogContent><DialogHeader><DialogTitle>Edit allocation</DialogTitle></DialogHeader>{editingAllocation && <div className="space-y-4"><div className="space-y-1.5"><Label>Teacher</Label><Select value={editStaff} onValueChange={setEditStaff}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(staff.data ?? []).map((member) => <SelectItem key={member.id} value={member.id}>{member.full_name}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1.5"><Label htmlFor="edit-alloc-periods">Periods per week</Label><Input id="edit-alloc-periods" type="number" min={1} max={20} value={editPeriods} onChange={(event) => setEditPeriods(event.target.value)} /></div><p className="text-xs text-muted-foreground">Match the CBE time allocation shown above. A different value will be saved, but verify it before generating the timetable.</p></div>}<DialogFooter><Button variant="outline" onClick={() => setEditingAllocationId(null)}>Cancel</Button><Button onClick={() => updateAllocation.mutate()} disabled={updateAllocation.isPending}>Save changes</Button></DialogFooter></DialogContent></Dialog>

@@ -40,6 +40,7 @@ export function generateTimetable(
   const teacherDayLoad = new Map<string, number>();
   const teacherWeekLoad = new Map<string, number>();
   const placedByAllocation = new Map<string, number>();
+  const streamDayLoad = new Map<string, number>();
   const failures: string[] = [];
   const ordered = allocations
     .filter((allocation) => allocation.periodsPerWeek > 0)
@@ -51,15 +52,16 @@ export function generateTimetable(
   const key = (kind: string, id: string, day: number, period: number) =>
     `${kind}:${id}:${day}:${period}`;
   const candidates = (allocation: GeneratorAllocation) =>
-    options.days.flatMap((day) =>
-      options.periods
-        .map((periodIndex) => ({ day, periodIndex }))
-        .sort((left, right) => {
-          const leftSpread = placedByAllocation.get(`${allocation.id}:${left.day}`) ?? 0;
-          const rightSpread = placedByAllocation.get(`${allocation.id}:${right.day}`) ?? 0;
-          return leftSpread - rightSpread;
-        }),
-    );
+    options.days
+      .flatMap((day) => options.periods.map((periodIndex) => ({ day, periodIndex })))
+      .sort((left, right) => {
+        const leftSpread = placedByAllocation.get(`${allocation.id}:${left.day}`) ?? 0;
+        const rightSpread = placedByAllocation.get(`${allocation.id}:${right.day}`) ?? 0;
+        const leftStreamLoad = streamDayLoad.get(`${allocation.streamId}:${left.day}`) ?? 0;
+        const rightStreamLoad = streamDayLoad.get(`${allocation.streamId}:${right.day}`) ?? 0;
+        if (leftSpread > 0 || rightSpread > 0) return rightSpread - leftSpread;
+        return leftStreamLoad - rightStreamLoad;
+      });
 
   function place(index: number): boolean {
     if (index === ordered.length) return true;
@@ -72,14 +74,18 @@ export function generateTimetable(
       const dayLoadKey = `${allocation.staffId}:${day}`;
       const dayLoad = teacherDayLoad.get(dayLoadKey) ?? 0;
       const weekLoad = teacherWeekLoad.get(allocation.staffId) ?? 0;
+      const allocationDayLoad = placedByAllocation.get(`${allocation.id}:${day}`) ?? 0;
       if (used.has(streamKey) || used.has(teacherKey) || (roomKey && used.has(roomKey))) continue;
       if (dayLoad >= maxPerDay || weekLoad >= maxPerWeek) continue;
+      if (allocationDayLoad >= 2) continue;
 
       used.add(streamKey);
       used.add(teacherKey);
       if (roomKey) used.add(roomKey);
       teacherDayLoad.set(dayLoadKey, dayLoad + 1);
       teacherWeekLoad.set(allocation.staffId, weekLoad + 1);
+      const streamDayKey = `${allocation.streamId}:${day}`;
+      streamDayLoad.set(streamDayKey, (streamDayLoad.get(streamDayKey) ?? 0) + 1);
       placedByAllocation.set(
         `${allocation.id}:${day}`,
         (placedByAllocation.get(`${allocation.id}:${day}`) ?? 0) + 1,
@@ -102,6 +108,10 @@ export function generateTimetable(
       if (roomKey) used.delete(roomKey);
       teacherDayLoad.set(dayLoadKey, dayLoad);
       teacherWeekLoad.set(allocation.staffId, weekLoad);
+      const rollbackStreamDayKey = `${allocation.streamId}:${day}`;
+      const streamLoad = streamDayLoad.get(rollbackStreamDayKey) ?? 1;
+      if (streamLoad <= 1) streamDayLoad.delete(rollbackStreamDayKey);
+      else streamDayLoad.set(rollbackStreamDayKey, streamLoad - 1);
       const spreadKey = `${allocation.id}:${day}`;
       const spread = placedByAllocation.get(spreadKey) ?? 1;
       if (spread <= 1) placedByAllocation.delete(spreadKey);

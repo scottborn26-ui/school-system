@@ -37,6 +37,7 @@ import { Route as AuthenticatedMyTeachingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedParentsRouteImport } from './routes/_authenticated/parents'
+import { Route as AuthenticatedPerformanceSummaryRouteImport } from './routes/_authenticated/performance-summary'
 import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPromotionsRouteImport } from './routes/_authenticated/promotions'
@@ -47,6 +48,7 @@ import { Route as AuthenticatedSelectRoleRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
 import { Route as AuthenticatedStaffAttendanceRouteImport } from './routes/_authenticated/staff-attendance'
+import { Route as AuthenticatedStudentPositionsRouteImport } from './routes/_authenticated/student-positions'
 import { Route as AuthenticatedTimetableRouteImport } from './routes/_authenticated/timetable'
 import { Route as AuthenticatedTransitionRouteImport } from './routes/_authenticated/transition'
 import { Route as AuthenticatedLearnersLearnerIdRouteImport } from './routes/_authenticated/learners.$learnerId'
@@ -199,6 +201,12 @@ const AuthenticatedParentsRoute = AuthenticatedParentsRouteImport.update({
   path: '/parents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPerformanceSummaryRoute =
+  AuthenticatedPerformanceSummaryRouteImport.update({
+    id: '/performance-summary',
+    path: '/performance-summary',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPlatformRoute = AuthenticatedPlatformRouteImport.update({
   id: '/platform',
   path: '/platform',
@@ -252,6 +260,12 @@ const AuthenticatedStaffAttendanceRoute =
     path: '/staff-attendance',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedStudentPositionsRoute =
+  AuthenticatedStudentPositionsRouteImport.update({
+    id: '/student-positions',
+    path: '/student-positions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTimetableRoute = AuthenticatedTimetableRouteImport.update({
   id: '/timetable',
   path: '/timetable',
@@ -297,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/parents': typeof AuthenticatedParentsRoute
+  '/performance-summary': typeof AuthenticatedPerformanceSummaryRoute
   '/platform': typeof AuthenticatedPlatformRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/promotions': typeof AuthenticatedPromotionsRoute
@@ -307,6 +322,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/staff-attendance': typeof AuthenticatedStaffAttendanceRoute
+  '/student-positions': typeof AuthenticatedStudentPositionsRoute
   '/timetable': typeof AuthenticatedTimetableRoute
   '/transition': typeof AuthenticatedTransitionRoute
   '/learners/$learnerId': typeof AuthenticatedLearnersLearnerIdRoute
@@ -339,6 +355,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/parents': typeof AuthenticatedParentsRoute
+  '/performance-summary': typeof AuthenticatedPerformanceSummaryRoute
   '/platform': typeof AuthenticatedPlatformRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/promotions': typeof AuthenticatedPromotionsRoute
@@ -349,6 +366,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/staff-attendance': typeof AuthenticatedStaffAttendanceRoute
+  '/student-positions': typeof AuthenticatedStudentPositionsRoute
   '/timetable': typeof AuthenticatedTimetableRoute
   '/transition': typeof AuthenticatedTransitionRoute
   '/learners/$learnerId': typeof AuthenticatedLearnersLearnerIdRoute
@@ -383,6 +401,7 @@ export interface FileRoutesById {
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/parents': typeof AuthenticatedParentsRoute
+  '/_authenticated/performance-summary': typeof AuthenticatedPerformanceSummaryRoute
   '/_authenticated/platform': typeof AuthenticatedPlatformRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/promotions': typeof AuthenticatedPromotionsRoute
@@ -393,6 +412,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
   '/_authenticated/staff-attendance': typeof AuthenticatedStaffAttendanceRoute
+  '/_authenticated/student-positions': typeof AuthenticatedStudentPositionsRoute
   '/_authenticated/timetable': typeof AuthenticatedTimetableRoute
   '/_authenticated/transition': typeof AuthenticatedTransitionRoute
   '/_authenticated/learners/$learnerId': typeof AuthenticatedLearnersLearnerIdRoute
@@ -427,6 +447,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/parents'
+    | '/performance-summary'
     | '/platform'
     | '/profile'
     | '/promotions'
@@ -437,6 +458,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/staff'
     | '/staff-attendance'
+    | '/student-positions'
     | '/timetable'
     | '/transition'
     | '/learners/$learnerId'
@@ -469,6 +491,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/parents'
+    | '/performance-summary'
     | '/platform'
     | '/profile'
     | '/promotions'
@@ -479,6 +502,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/staff'
     | '/staff-attendance'
+    | '/student-positions'
     | '/timetable'
     | '/transition'
     | '/learners/$learnerId'
@@ -512,6 +536,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
     | '/_authenticated/parents'
+    | '/_authenticated/performance-summary'
     | '/_authenticated/platform'
     | '/_authenticated/profile'
     | '/_authenticated/promotions'
@@ -522,6 +547,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/staff'
     | '/_authenticated/staff-attendance'
+    | '/_authenticated/student-positions'
     | '/_authenticated/timetable'
     | '/_authenticated/transition'
     | '/_authenticated/learners/$learnerId'
@@ -733,6 +759,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/performance-summary': {
+      id: '/_authenticated/performance-summary'
+      path: '/performance-summary'
+      fullPath: '/performance-summary'
+      preLoaderRoute: typeof AuthenticatedPerformanceSummaryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/platform': {
       id: '/_authenticated/platform'
       path: '/platform'
@@ -803,6 +836,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStaffAttendanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/student-positions': {
+      id: '/_authenticated/student-positions'
+      path: '/student-positions'
+      fullPath: '/student-positions'
+      preLoaderRoute: typeof AuthenticatedStudentPositionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/timetable': {
       id: '/_authenticated/timetable'
       path: '/timetable'
@@ -864,6 +904,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedParentsRoute: typeof AuthenticatedParentsRoute
+  AuthenticatedPerformanceSummaryRoute: typeof AuthenticatedPerformanceSummaryRoute
   AuthenticatedPlatformRoute: typeof AuthenticatedPlatformRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedPromotionsRoute: typeof AuthenticatedPromotionsRoute
@@ -874,6 +915,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
   AuthenticatedStaffAttendanceRoute: typeof AuthenticatedStaffAttendanceRoute
+  AuthenticatedStudentPositionsRoute: typeof AuthenticatedStudentPositionsRoute
   AuthenticatedTimetableRoute: typeof AuthenticatedTimetableRoute
   AuthenticatedTransitionRoute: typeof AuthenticatedTransitionRoute
 }
@@ -902,6 +944,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedParentsRoute: AuthenticatedParentsRoute,
+  AuthenticatedPerformanceSummaryRoute: AuthenticatedPerformanceSummaryRoute,
   AuthenticatedPlatformRoute: AuthenticatedPlatformRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedPromotionsRoute: AuthenticatedPromotionsRoute,
@@ -912,6 +955,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStaffRoute: AuthenticatedStaffRoute,
   AuthenticatedStaffAttendanceRoute: AuthenticatedStaffAttendanceRoute,
+  AuthenticatedStudentPositionsRoute: AuthenticatedStudentPositionsRoute,
   AuthenticatedTimetableRoute: AuthenticatedTimetableRoute,
   AuthenticatedTransitionRoute: AuthenticatedTransitionRoute,
 }

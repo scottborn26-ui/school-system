@@ -496,6 +496,172 @@ export type Database = {
           },
         ];
       };
+      general_ledger_entries: {
+        Row: {
+          account_code: string;
+          account_name: string;
+          amount: number;
+          created_at: string;
+          created_by: string | null;
+          description: string;
+          entry_date: string;
+          entry_type: string;
+          id: string;
+          notes: string | null;
+          reference: string | null;
+          school_id: string;
+        };
+        Insert: {
+          account_code: string;
+          account_name: string;
+          amount: number;
+          created_at?: string;
+          created_by?: string | null;
+          description: string;
+          entry_date?: string;
+          entry_type: string;
+          id?: string;
+          notes?: string | null;
+          reference?: string | null;
+          school_id: string;
+        };
+        Update: {
+          account_code?: string;
+          account_name?: string;
+          amount?: number;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          entry_date?: string;
+          entry_type?: string;
+          id?: string;
+          notes?: string | null;
+          reference?: string | null;
+          school_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "general_ledger_entries_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      inventory_items: {
+        Row: {
+          category: string;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          name: string;
+          notes: string | null;
+          quantity_on_hand: number;
+          reorder_level: number;
+          school_id: string;
+          supplier: string | null;
+          unit: string;
+          unit_cost: number;
+          updated_at: string;
+        };
+        Insert: {
+          category?: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          notes?: string | null;
+          quantity_on_hand?: number;
+          reorder_level?: number;
+          school_id: string;
+          supplier?: string | null;
+          unit?: string;
+          unit_cost?: number;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          notes?: string | null;
+          quantity_on_hand?: number;
+          reorder_level?: number;
+          school_id?: string;
+          supplier?: string | null;
+          unit?: string;
+          unit_cost?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      inventory_transactions: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          item_id: string;
+          notes: string | null;
+          quantity: number;
+          reference: string | null;
+          school_id: string;
+          transaction_date: string;
+          transaction_type: string;
+          unit_cost: number;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          item_id: string;
+          notes?: string | null;
+          quantity: number;
+          reference?: string | null;
+          school_id: string;
+          transaction_date?: string;
+          transaction_type: string;
+          unit_cost?: number;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          item_id?: string;
+          notes?: string | null;
+          quantity?: number;
+          reference?: string | null;
+          school_id?: string;
+          transaction_date?: string;
+          transaction_type?: string;
+          unit_cost?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "inventory_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "inventory_transactions_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       guardians: {
         Row: {
           address: string | null;
@@ -2257,6 +2423,7 @@ export type Database = {
       app_role:
         | "super_admin"
         | "admin"
+        | "accountant"
         | "exam_officer"
         | "principal"
         | "deputy"
@@ -2418,6 +2585,7 @@ export const Constants = {
       app_role: [
         "super_admin",
         "admin",
+        "accountant",
         "exam_officer",
         "principal",
         "deputy",

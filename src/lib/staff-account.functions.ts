@@ -13,9 +13,9 @@ const CreateStaffInput = z.object({
   nationalId: z.string().max(50, "National ID is too long").optional(),
   gender: z.string().max(20, "Gender value is too long").optional(),
   jobTitle: z.string().max(100, "Job title is too long").optional(),
-  role: z.enum(["teacher", "class_teacher", "exam_officer"], {
+  role: z.enum(["teacher", "class_teacher", "exam_officer", "accountant"], {
     errorMap: () => ({
-      message: "Role must be one of: teacher, class_teacher, or exam_officer",
+      message: "Role must be one of: teacher, class_teacher, exam_officer, or accountant",
     }),
   }),
   employmentType: z.string().max(50, "Employment type is too long").optional(),

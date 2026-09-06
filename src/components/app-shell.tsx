@@ -255,7 +255,7 @@ const NAV: NavItem[] = [
     to: "/finance",
     label: "Fees & Finance",
     icon: faCoins,
-    roles: ["principal", "deputy"],
+    roles: ["accountant", "principal", "deputy"],
   },
   {
     to: "/grading",

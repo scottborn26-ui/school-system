@@ -2,6 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  BookOpen,
+  Boxes,
   Coins,
   Download,
   Eye,
@@ -73,7 +77,7 @@ export const Route = createFileRoute("/_authenticated/finance")({
     ],
   }),
   component: () => (
-    <RequireSchool roles={["admin", "principal", "deputy", "super_admin"]}>
+    <RequireSchool roles={["admin", "accountant", "principal", "deputy", "super_admin"]}>
       <FinancePage />
     </RequireSchool>
   ),
@@ -153,6 +157,46 @@ function FinancePage() {
     },
   });
 
+  const inventoryItems = useQuery({
+    queryKey: ["inventory-items", schoolId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_items")
+        .select("*")
+        .eq("school_id", schoolId)
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const inventoryTransactions = useQuery({
+    queryKey: ["inventory-transactions", schoolId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_transactions")
+        .select("*")
+        .eq("school_id", schoolId)
+        .order("transaction_date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const generalLedger = useQuery({
+    queryKey: ["general-ledger", schoolId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("general_ledger_entries")
+        .select("*")
+        .eq("school_id", schoolId)
+        .order("entry_date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const learnerName = (id: string) => {
     const l = learners.data?.find((x) => x.id === id);
     return l ? `${l.first_name} ${l.last_name}` : "—";
@@ -175,6 +219,107 @@ function FinancePage() {
   const [fiName, setFiName] = useState("");
   const [fiGrade, setFiGrade] = useState<string>("all");
   const [fiAmount, setFiAmount] = useState("");
+
+  const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [inventoryName, setInventoryName] = useState("");
+  const [inventoryCategory, setInventoryCategory] = useState("General");
+  const [inventoryUnit, setInventoryUnit] = useState("pieces");
+  const [inventoryReorder, setInventoryReorder] = useState("0");
+  const [inventoryCost, setInventoryCost] = useState("0");
+  const [movementOpen, setMovementOpen] = useState(false);
+  const [movementItem, setMovementItem] = useState("");
+  const [movementType, setMovementType] = useState("purchase");
+  const [movementQuantity, setMovementQuantity] = useState("");
+  const [movementCost, setMovementCost] = useState("0");
+  const [movementReference, setMovementReference] = useState("");
+  const [journalOpen, setJournalOpen] = useState(false);
+  const [journalAccountCode, setJournalAccountCode] = useState("");
+  const [journalAccountName, setJournalAccountName] = useState("");
+  const [journalType, setJournalType] = useState("debit");
+  const [journalAmount, setJournalAmount] = useState("");
+  const [journalDescription, setJournalDescription] = useState("");
+  const [journalReference, setJournalReference] = useState("");
+
+  const createInventoryItem = useMutation({
+    mutationFn: async () => {
+      const unitCost = Number(inventoryCost);
+      const reorderLevel = Number(inventoryReorder);
+      if (inventoryName.trim().length < 2) throw new Error("Enter an inventory item name.");
+      if (!(unitCost >= 0) || !(reorderLevel >= 0)) throw new Error("Enter valid inventory values.");
+      const { error } = await supabase.from("inventory_items").insert({
+        school_id: schoolId,
+        name: inventoryName.trim(),
+        category: inventoryCategory.trim() || "General",
+        unit: inventoryUnit.trim() || "pieces",
+        reorder_level: reorderLevel,
+        unit_cost: unitCost,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Inventory item added.");
+      setInventoryOpen(false);
+      setInventoryName("");
+      void qc.invalidateQueries({ queryKey: ["inventory-items", schoolId] });
+    },
+    onError: (e: Error) => toast.error("Could not add inventory item.", { description: e.message }),
+  });
+
+  const createMovement = useMutation({
+    mutationFn: async () => {
+      const quantity = Number(movementQuantity);
+      const unitCost = Number(movementCost);
+      if (!movementItem) throw new Error("Select an inventory item.");
+      if (!(quantity !== 0) || !(unitCost >= 0)) throw new Error("Enter a valid quantity and cost.");
+      const { error } = await supabase.from("inventory_transactions").insert({
+        school_id: schoolId,
+        item_id: movementItem,
+        transaction_type: movementType,
+        quantity: movementType === "adjustment" ? quantity : Math.abs(quantity),
+        unit_cost: unitCost,
+        reference: movementReference.trim() || null,
+        created_by: school.userId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Inventory movement recorded.");
+      setMovementOpen(false);
+      setMovementQuantity("");
+      setMovementReference("");
+      void qc.invalidateQueries({ queryKey: ["inventory-items", schoolId] });
+      void qc.invalidateQueries({ queryKey: ["inventory-transactions", schoolId] });
+    },
+    onError: (e: Error) => toast.error("Could not record movement.", { description: e.message }),
+  });
+
+  const createJournalEntry = useMutation({
+    mutationFn: async () => {
+      const amount = Number(journalAmount);
+      if (!journalAccountCode.trim() || !journalAccountName.trim()) throw new Error("Enter an account code and name.");
+      if (!(amount > 0) || !journalDescription.trim()) throw new Error("Enter a valid amount and description.");
+      const { error } = await supabase.from("general_ledger_entries").insert({
+        school_id: schoolId,
+        account_code: journalAccountCode.trim(),
+        account_name: journalAccountName.trim(),
+        entry_type: journalType,
+        amount,
+        description: journalDescription.trim(),
+        reference: journalReference.trim() || null,
+        created_by: school.userId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("General ledger entry posted.");
+      setJournalOpen(false);
+      setJournalAmount("");
+      setJournalDescription("");
+      setJournalReference("");
+      void qc.invalidateQueries({ queryKey: ["general-ledger", schoolId] });
+    },
+    onError: (e: Error) => toast.error("Could not post ledger entry.", { description: e.message }),
+  });
 
   const createFeeItem = useMutation({
     mutationFn: async () => {
@@ -825,6 +970,12 @@ function FinancePage() {
           <TabsTrigger value="items">
             <Coins className="mr-2 size-4" /> Fee structure
           </TabsTrigger>
+          <TabsTrigger value="inventory">
+            <Boxes className="mr-2 size-4" /> Inventory
+          </TabsTrigger>
+          <TabsTrigger value="general-ledger">
+            <BookOpen className="mr-2 size-4" /> General ledger
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="invoices">
@@ -1431,6 +1582,102 @@ function FinancePage() {
                 </TableBody>
               </Table>
             </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="inventory">
+          <div className="mb-4 grid gap-4 sm:grid-cols-3">
+            {[
+              { label: "Stock items", value: inventoryItems.data?.length ?? 0 },
+              {
+                label: "Stock value",
+                value: formatKES(
+                  (inventoryItems.data ?? []).reduce(
+                    (sum, item) => sum + Number(item.quantity_on_hand) * Number(item.unit_cost),
+                    0,
+                  ),
+                ),
+              },
+              {
+                label: "Reorder alerts",
+                value: (inventoryItems.data ?? []).filter(
+                  (item) => Number(item.quantity_on_hand) <= Number(item.reorder_level),
+                ).length,
+              },
+            ].map((stat) => (
+              <Card key={stat.label}>
+                <CardContent className="pt-5">
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  <p className="text-xl font-semibold">{stat.value}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-base">School inventory</CardTitle>
+                <p className="text-sm text-muted-foreground">Track supplies, equipment and stock movements.</p>
+              </div>
+              <div className="flex gap-2">
+                <Dialog open={movementOpen} onOpenChange={setMovementOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline"><ArrowUpFromLine className="mr-2 size-4" /> Record movement</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Record stock movement</DialogTitle></DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-1.5"><Label>Inventory item</Label>
+                        <Select value={movementItem} onValueChange={setMovementItem}><SelectTrigger><SelectValue placeholder="Select item" /></SelectTrigger><SelectContent>
+                          {(inventoryItems.data ?? []).map((item) => <SelectItem key={item.id} value={item.id}>{item.name} · {item.quantity_on_hand} {item.unit}</SelectItem>)}
+                        </SelectContent></Select>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5"><Label>Movement</Label><Select value={movementType} onValueChange={setMovementType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="purchase">Purchase / receive</SelectItem><SelectItem value="issue">Issue / use</SelectItem><SelectItem value="adjustment">Adjustment</SelectItem></SelectContent></Select></div>
+                        <div className="space-y-1.5"><Label htmlFor="movement-quantity">Quantity</Label><Input id="movement-quantity" type="number" step="0.01" value={movementQuantity} onChange={(e) => setMovementQuantity(e.target.value)} placeholder={movementType === "adjustment" ? "Use negative to reduce" : "0"} /></div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="movement-cost">Unit cost (KES)</Label><Input id="movement-cost" type="number" min={0} value={movementCost} onChange={(e) => setMovementCost(e.target.value)} /></div><div className="space-y-1.5"><Label htmlFor="movement-reference">Reference</Label><Input id="movement-reference" value={movementReference} onChange={(e) => setMovementReference(e.target.value)} placeholder="Invoice or issue note" /></div></div>
+                    </div>
+                    <DialogFooter><Button onClick={() => createMovement.mutate()} disabled={createMovement.isPending}>Save movement</Button></DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <Dialog open={inventoryOpen} onOpenChange={setInventoryOpen}>
+                  <DialogTrigger asChild><Button><Plus className="mr-2 size-4" /> Add item</Button></DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Add inventory item</DialogTitle></DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-1.5"><Label htmlFor="inventory-name">Item name</Label><Input id="inventory-name" value={inventoryName} onChange={(e) => setInventoryName(e.target.value)} placeholder="e.g. A4 printing paper" /></div>
+                      <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="inventory-category">Category</Label><Input id="inventory-category" value={inventoryCategory} onChange={(e) => setInventoryCategory(e.target.value)} /></div><div className="space-y-1.5"><Label htmlFor="inventory-unit">Unit</Label><Input id="inventory-unit" value={inventoryUnit} onChange={(e) => setInventoryUnit(e.target.value)} placeholder="pieces, boxes, litres" /></div></div>
+                      <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="inventory-reorder">Reorder level</Label><Input id="inventory-reorder" type="number" min={0} value={inventoryReorder} onChange={(e) => setInventoryReorder(e.target.value)} /></div><div className="space-y-1.5"><Label htmlFor="inventory-cost">Unit cost (KES)</Label><Input id="inventory-cost" type="number" min={0} value={inventoryCost} onChange={(e) => setInventoryCost(e.target.value)} /></div></div>
+                    </div>
+                    <DialogFooter><Button onClick={() => createInventoryItem.mutate()} disabled={createInventoryItem.isPending}>Save item</Button></DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table><TableHeader><TableRow><TableHead>Item</TableHead><TableHead>Category</TableHead><TableHead>On hand</TableHead><TableHead>Unit cost</TableHead><TableHead className="text-right">Value</TableHead></TableRow></TableHeader><TableBody>
+                {(inventoryItems.data ?? []).length === 0 && <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">No inventory items yet.</TableCell></TableRow>}
+                {(inventoryItems.data ?? []).map((item) => { const low = Number(item.quantity_on_hand) <= Number(item.reorder_level); return <TableRow key={item.id}><TableCell className="font-medium">{item.name}{low && <Badge variant="outline" className="ml-2 text-amber-700">Reorder</Badge>}</TableCell><TableCell>{item.category}</TableCell><TableCell>{item.quantity_on_hand} {item.unit}</TableCell><TableCell>{formatKES(Number(item.unit_cost))}</TableCell><TableCell className="text-right">{formatKES(Number(item.quantity_on_hand) * Number(item.unit_cost))}</TableCell></TableRow>; })}
+              </TableBody></Table>
+              <div className="mt-6 border-t pt-4"><h3 className="mb-3 text-sm font-semibold">Recent movements</h3><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Item</TableHead><TableHead>Type</TableHead><TableHead>Quantity</TableHead><TableHead>Reference</TableHead></TableRow></TableHeader><TableBody>
+                {(inventoryTransactions.data ?? []).slice(0, 8).map((movement) => <TableRow key={movement.id}><TableCell>{formatDate(movement.transaction_date)}</TableCell><TableCell>{inventoryItems.data?.find((item) => item.id === movement.item_id)?.name ?? "—"}</TableCell><TableCell>{movement.transaction_type}</TableCell><TableCell className="flex items-center gap-1">{movement.transaction_type === "issue" ? <ArrowDownToLine className="size-3 text-amber-600" /> : <ArrowUpFromLine className="size-3 text-emerald-600" />}{movement.quantity}</TableCell><TableCell>{movement.reference ?? "—"}</TableCell></TableRow>)}
+              </TableBody></Table></div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="general-ledger">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-3"><div><CardTitle className="text-base">General school ledger</CardTitle><p className="text-sm text-muted-foreground">Post non-learner income and expenses with a clear debit and credit trail.</p></div>
+              <div className="flex gap-2"><Button variant="outline" onClick={() => downloadCsv("general-ledger", (generalLedger.data ?? []).map((entry) => ({ date: entry.entry_date, account_code: entry.account_code, account: entry.account_name, type: entry.entry_type, amount: Number(entry.amount), description: entry.description, reference: entry.reference ?? "" })))}><Download className="mr-2 size-4" /> Export</Button>
+                <Dialog open={journalOpen} onOpenChange={setJournalOpen}><DialogTrigger asChild><Button><Plus className="mr-2 size-4" /> Post entry</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Post general ledger entry</DialogTitle><DialogDescription>Record a school-level income, expense, asset or liability movement.</DialogDescription></DialogHeader><div className="space-y-4"><div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label htmlFor="journal-code">Account code</Label><Input id="journal-code" value={journalAccountCode} onChange={(e) => setJournalAccountCode(e.target.value)} placeholder="e.g. 6100" /></div><div className="space-y-1.5"><Label htmlFor="journal-account">Account name</Label><Input id="journal-account" value={journalAccountName} onChange={(e) => setJournalAccountName(e.target.value)} placeholder="e.g. Utilities expense" /></div></div><div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1.5"><Label>Entry type</Label><Select value={journalType} onValueChange={setJournalType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="debit">Debit</SelectItem><SelectItem value="credit">Credit</SelectItem></SelectContent></Select></div><div className="space-y-1.5"><Label htmlFor="journal-amount">Amount (KES)</Label><Input id="journal-amount" type="number" min={0.01} value={journalAmount} onChange={(e) => setJournalAmount(e.target.value)} /></div></div><div className="space-y-1.5"><Label htmlFor="journal-description">Description</Label><Textarea id="journal-description" value={journalDescription} onChange={(e) => setJournalDescription(e.target.value)} rows={2} /></div><div className="space-y-1.5"><Label htmlFor="journal-reference">Reference</Label><Input id="journal-reference" value={journalReference} onChange={(e) => setJournalReference(e.target.value)} placeholder="Receipt, voucher or invoice number" /></div></div><DialogFooter><Button onClick={() => createJournalEntry.mutate()} disabled={createJournalEntry.isPending}>Post entry</Button></DialogFooter></DialogContent></Dialog>
+              </div>
+            </CardHeader>
+            <CardContent><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Account</TableHead><TableHead>Description</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Reference</TableHead></TableRow></TableHeader><TableBody>
+              {(generalLedger.data ?? []).length === 0 && <TableRow><TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">No general ledger entries yet.</TableCell></TableRow>}
+              {(generalLedger.data ?? []).map((entry) => <TableRow key={entry.id}><TableCell>{formatDate(entry.entry_date)}</TableCell><TableCell><span className="font-mono text-xs">{entry.account_code}</span><br />{entry.account_name}</TableCell><TableCell>{entry.description}</TableCell><TableCell><Badge variant={entry.entry_type === "debit" ? "secondary" : "outline"}>{entry.entry_type}</Badge></TableCell><TableCell className="text-right font-medium">{formatKES(Number(entry.amount))}</TableCell><TableCell>{entry.reference ?? "—"}</TableCell></TableRow>)}
+            </TableBody></Table></CardContent>
           </Card>
         </TabsContent>
       </Tabs>

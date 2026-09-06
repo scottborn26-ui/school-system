@@ -1269,7 +1269,7 @@ function StaffDialog({
           nationalId: form.national_id,
           gender: form.gender,
           jobTitle: form.job_title,
-          role: form.role as "teacher" | "class_teacher" | "exam_officer",
+          role: form.role as "teacher" | "class_teacher" | "exam_officer" | "accountant",
           employmentType: form.employment_type,
           phone: form.phone ? normalizeKePhone(form.phone) : "",
           employmentDate: form.employment_date,
@@ -1378,7 +1378,7 @@ function StaffDialog({
             value={form.role}
             onValueChange={(v) => {
               set("role", v);
-              if (v === "exam_officer") {
+              if (v === "exam_officer" || v === "accountant") {
                 set("assigned_grades", []);
                 set("class_teacher_grade", "");
                 set("class_teacher_stream_id", "");
@@ -1392,10 +1392,11 @@ function StaffDialog({
               <SelectItem value="teacher">Teacher</SelectItem>
               <SelectItem value="class_teacher">Class teacher</SelectItem>
               <SelectItem value="exam_officer">Exam Officer</SelectItem>
+              <SelectItem value="accountant">Accountant</SelectItem>
             </SelectContent>
           </Select>
         </FieldRow>
-        {form.role !== "exam_officer" && (
+        {form.role !== "exam_officer" && form.role !== "accountant" && (
           <FieldRow label="Assigned grades">
             <div className="grid grid-cols-2 gap-2 rounded-md border p-3">
               {school.grades.map((grade) => (
@@ -1421,7 +1422,7 @@ function StaffDialog({
             </div>
           </FieldRow>
         )}
-        {form.role !== "exam_officer" && (
+        {form.role !== "exam_officer" && form.role !== "accountant" && (
           <>
             <FieldRow label="Class-teacher grade">
             <Select

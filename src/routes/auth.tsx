@@ -125,7 +125,7 @@ function AuthPage() {
         ? row.role === "super_admin"
         : selectedRole === "principal"
           ? row.role === "principal" && !staff
-          : ["admin", "exam_officer", "teacher", "class_teacher"].includes(row.role) && Boolean(staff),
+          : ["admin", "accountant", "exam_officer", "teacher", "class_teacher"].includes(row.role) && Boolean(staff),
     )?.role;
     if (!authenticatedRole) {
       if (selectedRole === "principal" && !staff && (memberships ?? []).length === 0) {

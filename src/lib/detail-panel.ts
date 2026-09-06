@@ -19,7 +19,7 @@ export function getPersonDisplayName(person: {
 }
 
 export function canViewFinancePanel(roles: string[]): boolean {
-  const allowed = new Set(["principal", "deputy", "super_admin", "admin"]);
+  const allowed = new Set(["principal", "deputy", "super_admin", "admin", "accountant"]);
   return roles.some((role) => allowed.has(role));
 }
 

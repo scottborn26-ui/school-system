@@ -36,6 +36,7 @@ export const Route = createFileRoute("/_authenticated/select-role")({
 const ROLE_ICONS: Record<AppRole, typeof BadgeCheck> = {
   super_admin: ShieldCheck,
   admin: ShieldCheck,
+  accountant: Coins,
   exam_officer: ShieldCheck,
   principal: UserCog,
   deputy: UserCog,
@@ -48,6 +49,7 @@ const ROLE_ICONS: Record<AppRole, typeof BadgeCheck> = {
 const ROLE_BLURB: Record<AppRole, string> = {
   super_admin: "Platform-wide administration across all schools.",
   admin: "School administration, curriculum and academic oversight.",
+  accountant: "Manage invoices, payments, receipts and school fee records.",
   exam_officer: "School-wide assessment administration and marks-entry oversight.",
   principal: "Full school oversight, approvals, publishing and settings.",
   deputy: "Approvals, timetabling and academic administration.",

@@ -50,9 +50,14 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
 import { Route as AuthenticatedStaffAttendanceRouteImport } from './routes/_authenticated/staff-attendance'
 import { Route as AuthenticatedStudentPositionsRouteImport } from './routes/_authenticated/student-positions'
+import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authenticated/super-admin'
 import { Route as AuthenticatedTimetableRouteImport } from './routes/_authenticated/timetable'
 import { Route as AuthenticatedTransitionRouteImport } from './routes/_authenticated/transition'
 import { Route as AuthenticatedLearnersLearnerIdRouteImport } from './routes/_authenticated/learners.$learnerId'
+import { Route as AuthenticatedSuperAdminIndexRouteImport } from './routes/_authenticated/super-admin/index'
+import { Route as AuthenticatedSuperAdminSchoolsRouteImport } from './routes/_authenticated/super-admin/schools'
+import { Route as AuthenticatedSuperAdminSchoolsSchoolIdRouteImport } from './routes/_authenticated/super-admin/schools/$schoolId'
+import { Route as AuthenticatedSuperAdminSchoolsNewRouteImport } from './routes/_authenticated/super-admin/schools/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -272,6 +277,11 @@ const AuthenticatedStudentPositionsRoute =
     path: '/student-positions',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSuperAdminRoute = AuthenticatedSuperAdminRouteImport.update({
+  id: '/super-admin',
+  path: '/super-admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTimetableRoute = AuthenticatedTimetableRouteImport.update({
   id: '/timetable',
   path: '/timetable',
@@ -287,6 +297,30 @@ const AuthenticatedLearnersLearnerIdRoute =
     id: '/$learnerId',
     path: '/$learnerId',
     getParentRoute: () => AuthenticatedLearnersRoute,
+  } as any)
+const AuthenticatedSuperAdminIndexRoute =
+  AuthenticatedSuperAdminIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminSchoolsRoute =
+  AuthenticatedSuperAdminSchoolsRouteImport.update({
+    id: '/schools',
+    path: '/schools',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminSchoolsSchoolIdRoute =
+  AuthenticatedSuperAdminSchoolsSchoolIdRouteImport.update({
+    id: '/$schoolId',
+    path: '/$schoolId',
+    getParentRoute: () => AuthenticatedSuperAdminSchoolsRoute,
+  } as any)
+const AuthenticatedSuperAdminSchoolsNewRoute =
+  AuthenticatedSuperAdminSchoolsNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedSuperAdminSchoolsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -330,9 +364,14 @@ export interface FileRoutesByFullPath {
   '/staff': typeof AuthenticatedStaffRoute
   '/staff-attendance': typeof AuthenticatedStaffAttendanceRoute
   '/student-positions': typeof AuthenticatedStudentPositionsRoute
+  '/super-admin': typeof AuthenticatedSuperAdminRouteWithChildren
   '/timetable': typeof AuthenticatedTimetableRoute
   '/transition': typeof AuthenticatedTransitionRoute
   '/learners/$learnerId': typeof AuthenticatedLearnersLearnerIdRoute
+  '/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRouteWithChildren
+  '/super-admin/': typeof AuthenticatedSuperAdminIndexRoute
+  '/super-admin/schools/$schoolId': typeof AuthenticatedSuperAdminSchoolsSchoolIdRoute
+  '/super-admin/schools/new': typeof AuthenticatedSuperAdminSchoolsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -378,6 +417,10 @@ export interface FileRoutesByTo {
   '/timetable': typeof AuthenticatedTimetableRoute
   '/transition': typeof AuthenticatedTransitionRoute
   '/learners/$learnerId': typeof AuthenticatedLearnersLearnerIdRoute
+  '/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRouteWithChildren
+  '/super-admin': typeof AuthenticatedSuperAdminIndexRoute
+  '/super-admin/schools/$schoolId': typeof AuthenticatedSuperAdminSchoolsSchoolIdRoute
+  '/super-admin/schools/new': typeof AuthenticatedSuperAdminSchoolsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -422,9 +465,14 @@ export interface FileRoutesById {
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
   '/_authenticated/staff-attendance': typeof AuthenticatedStaffAttendanceRoute
   '/_authenticated/student-positions': typeof AuthenticatedStudentPositionsRoute
+  '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRouteWithChildren
   '/_authenticated/timetable': typeof AuthenticatedTimetableRoute
   '/_authenticated/transition': typeof AuthenticatedTransitionRoute
   '/_authenticated/learners/$learnerId': typeof AuthenticatedLearnersLearnerIdRoute
+  '/_authenticated/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRouteWithChildren
+  '/_authenticated/super-admin/': typeof AuthenticatedSuperAdminIndexRoute
+  '/_authenticated/super-admin/schools/$schoolId': typeof AuthenticatedSuperAdminSchoolsSchoolIdRoute
+  '/_authenticated/super-admin/schools/new': typeof AuthenticatedSuperAdminSchoolsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -469,9 +517,14 @@ export interface FileRouteTypes {
     | '/staff'
     | '/staff-attendance'
     | '/student-positions'
+    | '/super-admin'
     | '/timetable'
     | '/transition'
     | '/learners/$learnerId'
+    | '/super-admin/schools'
+    | '/super-admin/'
+    | '/super-admin/schools/$schoolId'
+    | '/super-admin/schools/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -517,6 +570,10 @@ export interface FileRouteTypes {
     | '/timetable'
     | '/transition'
     | '/learners/$learnerId'
+    | '/super-admin/schools'
+    | '/super-admin'
+    | '/super-admin/schools/$schoolId'
+    | '/super-admin/schools/new'
   id:
     | '__root__'
     | '/'
@@ -560,9 +617,14 @@ export interface FileRouteTypes {
     | '/_authenticated/staff'
     | '/_authenticated/staff-attendance'
     | '/_authenticated/student-positions'
+    | '/_authenticated/super-admin'
     | '/_authenticated/timetable'
     | '/_authenticated/transition'
     | '/_authenticated/learners/$learnerId'
+    | '/_authenticated/super-admin/schools'
+    | '/_authenticated/super-admin/'
+    | '/_authenticated/super-admin/schools/$schoolId'
+    | '/_authenticated/super-admin/schools/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -862,6 +924,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudentPositionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/super-admin': {
+      id: '/_authenticated/super-admin'
+      path: '/super-admin'
+      fullPath: '/super-admin'
+      preLoaderRoute: typeof AuthenticatedSuperAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/timetable': {
       id: '/_authenticated/timetable'
       path: '/timetable'
@@ -883,6 +952,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLearnersLearnerIdRouteImport
       parentRoute: typeof AuthenticatedLearnersRoute
     }
+    '/_authenticated/super-admin/': {
+      id: '/_authenticated/super-admin/'
+      path: '/'
+      fullPath: '/super-admin/'
+      preLoaderRoute: typeof AuthenticatedSuperAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/schools': {
+      id: '/_authenticated/super-admin/schools'
+      path: '/schools'
+      fullPath: '/super-admin/schools'
+      preLoaderRoute: typeof AuthenticatedSuperAdminSchoolsRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/schools/$schoolId': {
+      id: '/_authenticated/super-admin/schools/$schoolId'
+      path: '/$schoolId'
+      fullPath: '/super-admin/schools/$schoolId'
+      preLoaderRoute: typeof AuthenticatedSuperAdminSchoolsSchoolIdRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminSchoolsRoute
+    }
+    '/_authenticated/super-admin/schools/new': {
+      id: '/_authenticated/super-admin/schools/new'
+      path: '/new'
+      fullPath: '/super-admin/schools/new'
+      preLoaderRoute: typeof AuthenticatedSuperAdminSchoolsNewRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminSchoolsRoute
+    }
   }
 }
 
@@ -897,6 +994,41 @@ const AuthenticatedLearnersRouteChildren: AuthenticatedLearnersRouteChildren = {
 const AuthenticatedLearnersRouteWithChildren =
   AuthenticatedLearnersRoute._addFileChildren(
     AuthenticatedLearnersRouteChildren,
+  )
+
+interface AuthenticatedSuperAdminSchoolsRouteChildren {
+  AuthenticatedSuperAdminSchoolsSchoolIdRoute: typeof AuthenticatedSuperAdminSchoolsSchoolIdRoute
+  AuthenticatedSuperAdminSchoolsNewRoute: typeof AuthenticatedSuperAdminSchoolsNewRoute
+}
+
+const AuthenticatedSuperAdminSchoolsRouteChildren: AuthenticatedSuperAdminSchoolsRouteChildren =
+  {
+    AuthenticatedSuperAdminSchoolsSchoolIdRoute:
+      AuthenticatedSuperAdminSchoolsSchoolIdRoute,
+    AuthenticatedSuperAdminSchoolsNewRoute:
+      AuthenticatedSuperAdminSchoolsNewRoute,
+  }
+
+const AuthenticatedSuperAdminSchoolsRouteWithChildren =
+  AuthenticatedSuperAdminSchoolsRoute._addFileChildren(
+    AuthenticatedSuperAdminSchoolsRouteChildren,
+  )
+
+interface AuthenticatedSuperAdminRouteChildren {
+  AuthenticatedSuperAdminSchoolsRoute: typeof AuthenticatedSuperAdminSchoolsRouteWithChildren
+  AuthenticatedSuperAdminIndexRoute: typeof AuthenticatedSuperAdminIndexRoute
+}
+
+const AuthenticatedSuperAdminRouteChildren: AuthenticatedSuperAdminRouteChildren =
+  {
+    AuthenticatedSuperAdminSchoolsRoute:
+      AuthenticatedSuperAdminSchoolsRouteWithChildren,
+    AuthenticatedSuperAdminIndexRoute: AuthenticatedSuperAdminIndexRoute,
+  }
+
+const AuthenticatedSuperAdminRouteWithChildren =
+  AuthenticatedSuperAdminRoute._addFileChildren(
+    AuthenticatedSuperAdminRouteChildren,
   )
 
 interface AuthenticatedRouteRouteChildren {
@@ -936,6 +1068,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
   AuthenticatedStaffAttendanceRoute: typeof AuthenticatedStaffAttendanceRoute
   AuthenticatedStudentPositionsRoute: typeof AuthenticatedStudentPositionsRoute
+  AuthenticatedSuperAdminRoute: typeof AuthenticatedSuperAdminRouteWithChildren
   AuthenticatedTimetableRoute: typeof AuthenticatedTimetableRoute
   AuthenticatedTransitionRoute: typeof AuthenticatedTransitionRoute
 }
@@ -977,6 +1110,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedStaffRoute: AuthenticatedStaffRoute,
   AuthenticatedStaffAttendanceRoute: AuthenticatedStaffAttendanceRoute,
   AuthenticatedStudentPositionsRoute: AuthenticatedStudentPositionsRoute,
+  AuthenticatedSuperAdminRoute: AuthenticatedSuperAdminRouteWithChildren,
   AuthenticatedTimetableRoute: AuthenticatedTimetableRoute,
   AuthenticatedTransitionRoute: AuthenticatedTransitionRoute,
 }

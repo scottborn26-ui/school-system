@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
@@ -61,6 +61,9 @@ import { downloadCsv, parseCsv, printSection } from "@/lib/csv";
 import { formatDate, formatDateTime, formatKES } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/finance")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Fees, invoices & receipts · SHANSCOTT CBE" },
@@ -87,8 +90,10 @@ const METHODS = ["mpesa", "bank", "cash", "cheque", "bursary", "waiver"] as cons
 
 function FinancePage() {
   const school = useSchool();
+  const { tab } = useSearch({ from: "/_authenticated/finance" });
   const qc = useQueryClient();
   const schoolId = school.schoolId!;
+  const [activeTab, setActiveTab] = useState(tab ?? "invoices");
 
   const learners = useQuery({
     queryKey: ["learners-lite", schoolId],
@@ -956,7 +961,7 @@ function FinancePage() {
         ))}
       </div>
 
-      <Tabs defaultValue="invoices">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4 flex-wrap">
           <TabsTrigger value="invoices">
             <FileText className="mr-2 size-4" /> Invoices

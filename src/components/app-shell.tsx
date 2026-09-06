@@ -62,11 +62,12 @@ interface NavItem {
   label: string;
   icon: IconDefinition;
   roles: AppRole[];
+  tab?: string;
 }
 
 interface NavGroup {
   label: string;
-  paths: string[];
+  paths: Array<string | { to: string; tab?: string }>;
 }
 
 const NAV_GROUPS: NavGroup[] = [
@@ -103,7 +104,17 @@ const NAV_GROUPS: NavGroup[] = [
       "/grading",
     ],
   },
-  { label: "Finance", paths: ["/finance"] },
+  {
+    label: "Finance",
+    paths: [
+      { to: "/finance", tab: "invoices" },
+      { to: "/finance", tab: "payments" },
+      { to: "/finance", tab: "statements" },
+      { to: "/finance", tab: "items" },
+      { to: "/finance", tab: "inventory" },
+      { to: "/finance", tab: "general-ledger" },
+    ],
+  },
   { label: "Settings & security", paths: ["/settings", "/audit", "/platform"] },
 ];
 
@@ -253,9 +264,45 @@ const NAV: NavItem[] = [
   },
   {
     to: "/finance",
-    label: "Fees & Finance",
+    label: "Invoices",
     icon: faCoins,
     roles: ["accountant", "principal", "deputy"],
+    tab: "invoices",
+  },
+  {
+    to: "/finance",
+    label: "Payments & receipts",
+    icon: faCoins,
+    roles: ["accountant", "principal", "deputy"],
+    tab: "payments",
+  },
+  {
+    to: "/finance",
+    label: "Statements",
+    icon: faFileLines,
+    roles: ["accountant", "principal", "deputy"],
+    tab: "statements",
+  },
+  {
+    to: "/finance",
+    label: "Fee structure",
+    icon: faCoins,
+    roles: ["accountant", "principal", "deputy"],
+    tab: "items",
+  },
+  {
+    to: "/finance",
+    label: "Inventory",
+    icon: faBoxArchive,
+    roles: ["accountant", "principal", "deputy"],
+    tab: "inventory",
+  },
+  {
+    to: "/finance",
+    label: "General ledger",
+    icon: faBookOpen,
+    roles: ["accountant", "principal", "deputy"],
+    tab: "general-ledger",
   },
   {
     to: "/grading",
@@ -279,6 +326,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const school = useSchool();
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const search = useRouterState({ select: (s) => s.location.search });
   const isNavigating = useRouterState({ select: (s) => s.status === "pending" });
   const communicationCounts = useCommunicationCounts(school.userId);
   const { theme, setTheme } = useTheme();
@@ -335,7 +383,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const groupedNavigation = NAV_GROUPS.map((group) => ({
     ...group,
     items: group.paths
-      .map((path) => visible.find((item) => item.to === path))
+      .map((path) =>
+        typeof path === "string"
+          ? visible.find((item) => item.to === path && !item.tab)
+          : visible.find((item) => item.to === path.to && item.tab === path.tab),
+      )
       .filter((item): item is NavItem => Boolean(item)),
   })).filter((group) => group.items.length > 0);
 
@@ -380,11 +432,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
             <div className="space-y-1">
               {group.items.map((item) => {
-                const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                const activePath = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                const active =
+                  activePath &&
+                  (!item.tab || search.tab === item.tab || (!search.tab && item.tab === "invoices"));
                 return (
                   <Link
-                    key={item.to}
+                    key={`${item.to}-${item.tab ?? "default"}`}
                     to={item.to}
+                    search={item.tab ? { tab: item.tab } : undefined}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm leading-5 transition-all duration-200",
                       collapsed && "justify-center px-2",

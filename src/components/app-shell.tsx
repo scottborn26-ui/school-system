@@ -77,6 +77,7 @@ const NAV_GROUPS: NavGroup[] = [
     paths: [
       "/attendance",
       "/attendance-analytics",
+      "/staff-attendance",
       "/marks",
       "/assessment-approvals",
       "/approved-assignments",
@@ -107,12 +108,12 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Finance",
     paths: [
-      { to: "/finance", tab: "invoices" },
-      { to: "/finance", tab: "payments" },
-      { to: "/finance", tab: "statements" },
-      { to: "/finance", tab: "items" },
-      { to: "/finance", tab: "inventory" },
-      { to: "/finance", tab: "general-ledger" },
+      "/finance-invoices",
+      "/finance-payments",
+      "/finance-statements",
+      "/finance-fee-structure",
+      "/inventory",
+      "/finance-general-ledger",
     ],
   },
   { label: "Settings & security", paths: ["/settings", "/audit", "/platform"] },
@@ -153,7 +154,7 @@ const NAV: NavItem[] = [
     icon: faGraduationCap,
     roles: ["principal", "deputy", "super_admin"],
   },
-  { to: "/staff", label: "Staff", icon: faUserTie, roles: ["principal", "deputy"] },
+  { to: "/staff", label: "Staff", icon: faUserTie, roles: ["admin", "principal", "deputy"] },
   {
     to: "/my-teaching",
     label: "My Teaching",
@@ -202,6 +203,16 @@ const NAV: NavItem[] = [
     icon: faChartLine,
     roles: ["admin", "principal", "deputy", "super_admin"],
   },
+  {
+    to: "/staff-attendance",
+    label: "Daily staff attendance",
+    icon: faClipboardCheck,
+    roles: ["admin", "principal", "deputy", "security"],
+  },
+  { to: "/security", label: "Security dashboard", icon: faShieldHalved, roles: ["security"] },
+  { to: "/security/today", label: "Today summary", icon: faClipboardCheck, roles: ["security"] },
+  { to: "/security/history", label: "Staff history", icon: faCalendarDays, roles: ["security"] },
+  { to: "/security/reports", label: "Attendance reports", icon: faFileLines, roles: ["security"] },
   {
     to: "/marks",
     label: "Marks Entry",
@@ -263,46 +274,40 @@ const NAV: NavItem[] = [
     roles: ["admin", "exam_officer", "principal", "deputy", "super_admin"],
   },
   {
-    to: "/finance",
+    to: "/finance-invoices",
     label: "Invoices",
     icon: faCoins,
     roles: ["accountant", "principal", "deputy"],
-    tab: "invoices",
   },
   {
-    to: "/finance",
+    to: "/finance-payments",
     label: "Payments & receipts",
     icon: faCoins,
     roles: ["accountant", "principal", "deputy"],
-    tab: "payments",
   },
   {
-    to: "/finance",
+    to: "/finance-statements",
     label: "Statements",
     icon: faFileLines,
     roles: ["accountant", "principal", "deputy"],
-    tab: "statements",
   },
   {
-    to: "/finance",
+    to: "/finance-fee-structure",
     label: "Fee structure",
     icon: faCoins,
     roles: ["accountant", "principal", "deputy"],
-    tab: "items",
   },
   {
-    to: "/finance",
+    to: "/inventory",
     label: "Inventory",
     icon: faBoxArchive,
     roles: ["accountant", "principal", "deputy"],
-    tab: "inventory",
   },
   {
-    to: "/finance",
+    to: "/finance-general-ledger",
     label: "General ledger",
     icon: faBookOpen,
     roles: ["accountant", "principal", "deputy"],
-    tab: "general-ledger",
   },
   {
     to: "/grading",
@@ -326,7 +331,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const school = useSchool();
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const search = useRouterState({ select: (s) => s.location.search });
   const isNavigating = useRouterState({ select: (s) => s.status === "pending" });
   const communicationCounts = useCommunicationCounts(school.userId);
   const { theme, setTheme } = useTheme();
@@ -336,7 +340,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   )
     .filter(
       (item) =>
-        school.activeRole !== "exam_officer" ||
+        school.activeRole === "security"
+          ? ["/security", "/security/today", "/security/history", "/security/reports", "/staff-attendance"].includes(item.to)
+          : school.activeRole !== "exam_officer" ||
         [
           "/dashboard",
           "/exam-timetable",
@@ -367,6 +373,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         };
         return labels[item.to] ? { ...item, label: labels[item.to] } : item;
       }
+      if (school.activeRole === "security" && item.to === "/staff-attendance") {
+        return { ...item, label: "Gate check-in" };
+      }
       if (school.can("teacher") && !school.can("principal", "deputy", "super_admin")) {
         const labels: Record<string, string> = {
           "/learners": "My Students",
@@ -385,7 +394,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     items: group.paths
       .map((path) =>
         typeof path === "string"
-          ? visible.find((item) => item.to === path && !item.tab)
+          ? visible.find((item) => item.to === path)
           : visible.find((item) => item.to === path.to && item.tab === path.tab),
       )
       .filter((item): item is NavItem => Boolean(item)),
@@ -410,7 +419,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-white">Shanscot Technologies</p>
             <p className="truncate text-xs text-slate-300">
-              {school.school?.name ?? "School Management"}
+              {school.school?.name ?? "smartschool"}
             </p>
           </div>
         )}
@@ -432,15 +441,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
             <div className="space-y-1">
               {group.items.map((item) => {
-                const activePath = pathname === item.to || pathname.startsWith(`${item.to}/`);
-                const active =
-                  activePath &&
-                  (!item.tab || search.tab === item.tab || (!search.tab && item.tab === "invoices"));
+                const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
                 return (
                   <Link
                     key={`${item.to}-${item.tab ?? "default"}`}
                     to={item.to}
-                    search={item.tab ? { tab: item.tab } : undefined}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm leading-5 transition-all duration-200",
                       collapsed && "justify-center px-2",

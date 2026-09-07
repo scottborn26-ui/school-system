@@ -14,12 +14,12 @@ export const Route = createFileRoute("/reset-password")({
       { title: "Set a new password · SHANSCOTT CBE" },
       {
         name: "description",
-        content: "Choose a new password for your SHANSCOTT CBE school management account.",
+        content: "Choose a new password for your smartschool account.",
       },
       { property: "og:title", content: "Set a new password · SHANSCOTT CBE" },
       {
         property: "og:description",
-        content: "Complete your password reset for the SHANSCOTT CBE school management system.",
+        content: "Complete your password reset for smartschool.",
       },
       { name: "robots", content: "noindex" },
     ],

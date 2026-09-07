@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/select-role")({
       {
         name: "description",
         content:
-          "Select the role you want to work in for this session on SHANSCOTT CBE School Management.",
+          "Select the role you want to work in for this session on smartschool.",
       },
       { property: "og:title", content: "Choose your role · SHANSCOTT CBE" },
       {
@@ -37,6 +37,7 @@ const ROLE_ICONS: Record<AppRole, typeof BadgeCheck> = {
   super_admin: ShieldCheck,
   admin: ShieldCheck,
   accountant: Coins,
+  security: ShieldCheck,
   exam_officer: ShieldCheck,
   principal: UserCog,
   deputy: UserCog,
@@ -50,6 +51,7 @@ const ROLE_BLURB: Record<AppRole, string> = {
   super_admin: "Platform-wide administration across all schools.",
   admin: "School administration, curriculum and academic oversight.",
   accountant: "Manage invoices, payments, receipts and school fee records.",
+  security: "Check school staff in and out at the gate.",
   exam_officer: "School-wide assessment administration and marks-entry oversight.",
   principal: "Full school oversight, approvals, publishing and settings.",
   deputy: "Approvals, timetabling and academic administration.",
@@ -68,6 +70,8 @@ function SelectRolePage() {
     typeof window !== "undefined"
       ? (window.localStorage.getItem("shanscott.activeRole") as AppRole | null)
       : null;
+  const landingPath = (role: AppRole) =>
+    role === "super_admin" ? "/platform" : role === "security" ? "/staff-attendance" : "/dashboard";
 
   useEffect(() => {
     if (school.loading) return;
@@ -77,18 +81,18 @@ function SelectRolePage() {
     }
     if (requestedRole && school.roles.includes(requestedRole)) {
       school.setActiveRole(requestedRole);
-      void router.navigate({ to: requestedRole === "super_admin" ? "/platform" : "/dashboard", replace: true });
+      void router.navigate({ to: landingPath(requestedRole), replace: true });
       return;
     }
     if (single) {
       school.setActiveRole(single);
-      void router.navigate({ to: single === "super_admin" ? "/platform" : "/dashboard", replace: true });
+      void router.navigate({ to: landingPath(single), replace: true });
     }
   }, [school.loading, school.roles.length, single, requestedRole, router, school]);
 
   function choose(role: AppRole) {
     school.setActiveRole(role);
-    void router.navigate({ to: role === "super_admin" ? "/platform" : "/dashboard", replace: true });
+    void router.navigate({ to: landingPath(role), replace: true });
   }
 
   if (school.loading || single || school.roles.length === 0) {

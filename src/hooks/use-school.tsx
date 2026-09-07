@@ -8,6 +8,7 @@ export type AppRole =
   | "super_admin"
   | "admin"
   | "accountant"
+  | "security"
   | "exam_officer"
   | "principal"
   | "deputy"
@@ -20,6 +21,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   super_admin: "Platform Super Administrator",
   admin: "School Administrator",
   accountant: "Accountant",
+  security: "Security / Gate Staff",
   exam_officer: "Exam Officer",
   principal: "Headteacher / Principal",
   deputy: "Deputy Headteacher",
@@ -116,7 +118,7 @@ export function SchoolProvider({ children, user }: { children: ReactNode; user: 
         ]);
 
       const schoolId = memberships?.[0]?.school_id ?? null;
-      const staffRoles = ["admin", "accountant", "exam_officer", "teacher", "class_teacher"];
+      const staffRoles = ["admin", "accountant", "exam_officer", "teacher", "class_teacher", "security"];
       const visibleRoleRows = staff
         ? (roleRows ?? []).filter((row) => staffRoles.includes(row.role))
         : (roleRows ?? []);

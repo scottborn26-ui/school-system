@@ -1,4 +1,4 @@
-import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
@@ -88,12 +88,17 @@ export const Route = createFileRoute("/_authenticated/finance")({
 
 const METHODS = ["mpesa", "bank", "cash", "cheque", "bursary", "waiver"] as const;
 
-function FinancePage() {
+export function FinancePage({
+  initialTab = "invoices",
+  standalone = false,
+}: {
+  initialTab?: string;
+  standalone?: boolean;
+}) {
   const school = useSchool();
-  const { tab } = useSearch({ from: "/_authenticated/finance" });
   const qc = useQueryClient();
   const schoolId = school.schoolId!;
-  const [activeTab, setActiveTab] = useState(tab ?? "invoices");
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   const learners = useQuery({
     queryKey: ["learners-lite", schoolId],
@@ -962,7 +967,7 @@ function FinancePage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4 flex-wrap">
+        {!standalone && <TabsList className="mb-4 flex-wrap">
           <TabsTrigger value="invoices">
             <FileText className="mr-2 size-4" /> Invoices
           </TabsTrigger>
@@ -981,7 +986,7 @@ function FinancePage() {
           <TabsTrigger value="general-ledger">
             <BookOpen className="mr-2 size-4" /> General ledger
           </TabsTrigger>
-        </TabsList>
+        </TabsList>}
 
         <TabsContent value="invoices">
           <DataTable

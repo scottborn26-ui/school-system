@@ -28,7 +28,15 @@ import { Route as AuthenticatedCurriculumRouteImport } from './routes/_authentic
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedExamTimetableRouteImport } from './routes/_authenticated/exam-timetable'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
+import { Route as AuthenticatedFinanceFeeStructureRouteImport } from './routes/_authenticated/finance-fee-structure'
+import { Route as AuthenticatedFinanceGeneralLedgerRouteImport } from './routes/_authenticated/finance-general-ledger'
+import { Route as AuthenticatedFinanceInventoryRouteImport } from './routes/_authenticated/finance-inventory'
+import { Route as AuthenticatedFinanceInvoicesRouteImport } from './routes/_authenticated/finance-invoices'
+import { Route as AuthenticatedFinancePaymentsRouteImport } from './routes/_authenticated/finance-payments'
+import { Route as AuthenticatedFinanceStatementsRouteImport } from './routes/_authenticated/finance-statements'
+import { Route as AuthenticatedGeneralLedgerRouteImport } from './routes/_authenticated/general-ledger'
 import { Route as AuthenticatedGradingRouteImport } from './routes/_authenticated/grading'
+import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedLearnersRouteImport } from './routes/_authenticated/learners'
 import { Route as AuthenticatedMarksRouteImport } from './routes/_authenticated/marks'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
@@ -45,6 +53,7 @@ import { Route as AuthenticatedPromotionsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedReportCardApprovalsRouteImport } from './routes/_authenticated/report-card-approvals'
 import { Route as AuthenticatedReportManagementRouteImport } from './routes/_authenticated/report-management'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedSecurityRouteImport } from './routes/_authenticated/security'
 import { Route as AuthenticatedSelectRoleRouteImport } from './routes/_authenticated/select-role'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
@@ -54,6 +63,9 @@ import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authentic
 import { Route as AuthenticatedTimetableRouteImport } from './routes/_authenticated/timetable'
 import { Route as AuthenticatedTransitionRouteImport } from './routes/_authenticated/transition'
 import { Route as AuthenticatedLearnersLearnerIdRouteImport } from './routes/_authenticated/learners.$learnerId'
+import { Route as AuthenticatedSecurityHistoryRouteImport } from './routes/_authenticated/security.history'
+import { Route as AuthenticatedSecurityReportsRouteImport } from './routes/_authenticated/security.reports'
+import { Route as AuthenticatedSecurityTodayRouteImport } from './routes/_authenticated/security.today'
 import { Route as AuthenticatedSuperAdminIndexRouteImport } from './routes/_authenticated/super-admin/index'
 import { Route as AuthenticatedSuperAdminSchoolsRouteImport } from './routes/_authenticated/super-admin/schools'
 import { Route as AuthenticatedSuperAdminSchoolsSchoolIdRouteImport } from './routes/_authenticated/super-admin/schools/$schoolId'
@@ -160,9 +172,56 @@ const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
   path: '/finance',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFinanceFeeStructureRoute =
+  AuthenticatedFinanceFeeStructureRouteImport.update({
+    id: '/finance-fee-structure',
+    path: '/finance-fee-structure',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceGeneralLedgerRoute =
+  AuthenticatedFinanceGeneralLedgerRouteImport.update({
+    id: '/finance-general-ledger',
+    path: '/finance-general-ledger',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceInventoryRoute =
+  AuthenticatedFinanceInventoryRouteImport.update({
+    id: '/finance-inventory',
+    path: '/finance-inventory',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceInvoicesRoute =
+  AuthenticatedFinanceInvoicesRouteImport.update({
+    id: '/finance-invoices',
+    path: '/finance-invoices',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinancePaymentsRoute =
+  AuthenticatedFinancePaymentsRouteImport.update({
+    id: '/finance-payments',
+    path: '/finance-payments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceStatementsRoute =
+  AuthenticatedFinanceStatementsRouteImport.update({
+    id: '/finance-statements',
+    path: '/finance-statements',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedGeneralLedgerRoute =
+  AuthenticatedGeneralLedgerRouteImport.update({
+    id: '/general-ledger',
+    path: '/general-ledger',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedGradingRoute = AuthenticatedGradingRouteImport.update({
   id: '/grading',
   path: '/grading',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLearnersRoute = AuthenticatedLearnersRouteImport.update({
@@ -250,6 +309,11 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSecurityRoute = AuthenticatedSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSelectRoleRoute = AuthenticatedSelectRoleRouteImport.update({
   id: '/select-role',
   path: '/select-role',
@@ -298,6 +362,24 @@ const AuthenticatedLearnersLearnerIdRoute =
     path: '/$learnerId',
     getParentRoute: () => AuthenticatedLearnersRoute,
   } as any)
+const AuthenticatedSecurityHistoryRoute =
+  AuthenticatedSecurityHistoryRouteImport.update({
+    id: '/history',
+    path: '/history',
+    getParentRoute: () => AuthenticatedSecurityRoute,
+  } as any)
+const AuthenticatedSecurityReportsRoute =
+  AuthenticatedSecurityReportsRouteImport.update({
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => AuthenticatedSecurityRoute,
+  } as any)
+const AuthenticatedSecurityTodayRoute =
+  AuthenticatedSecurityTodayRouteImport.update({
+    id: '/today',
+    path: '/today',
+    getParentRoute: () => AuthenticatedSecurityRoute,
+  } as any)
 const AuthenticatedSuperAdminIndexRoute =
   AuthenticatedSuperAdminIndexRouteImport.update({
     id: '/',
@@ -342,7 +424,15 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/exam-timetable': typeof AuthenticatedExamTimetableRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/finance-fee-structure': typeof AuthenticatedFinanceFeeStructureRoute
+  '/finance-general-ledger': typeof AuthenticatedFinanceGeneralLedgerRoute
+  '/finance-inventory': typeof AuthenticatedFinanceInventoryRoute
+  '/finance-invoices': typeof AuthenticatedFinanceInvoicesRoute
+  '/finance-payments': typeof AuthenticatedFinancePaymentsRoute
+  '/finance-statements': typeof AuthenticatedFinanceStatementsRoute
+  '/general-ledger': typeof AuthenticatedGeneralLedgerRoute
   '/grading': typeof AuthenticatedGradingRoute
+  '/inventory': typeof AuthenticatedInventoryRoute
   '/learners': typeof AuthenticatedLearnersRouteWithChildren
   '/marks': typeof AuthenticatedMarksRoute
   '/messages': typeof AuthenticatedMessagesRoute
@@ -359,6 +449,7 @@ export interface FileRoutesByFullPath {
   '/report-card-approvals': typeof AuthenticatedReportCardApprovalsRoute
   '/report-management': typeof AuthenticatedReportManagementRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/security': typeof AuthenticatedSecurityRouteWithChildren
   '/select-role': typeof AuthenticatedSelectRoleRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/staff': typeof AuthenticatedStaffRoute
@@ -368,6 +459,9 @@ export interface FileRoutesByFullPath {
   '/timetable': typeof AuthenticatedTimetableRoute
   '/transition': typeof AuthenticatedTransitionRoute
   '/learners/$learnerId': typeof AuthenticatedLearnersLearnerIdRoute
+  '/security/history': typeof AuthenticatedSecurityHistoryRoute
+  '/security/reports': typeof AuthenticatedSecurityReportsRoute
+  '/security/today': typeof AuthenticatedSecurityTodayRoute
   '/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRouteWithChildren
   '/super-admin/': typeof AuthenticatedSuperAdminIndexRoute
   '/super-admin/schools/$schoolId': typeof AuthenticatedSuperAdminSchoolsSchoolIdRoute
@@ -392,7 +486,15 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/exam-timetable': typeof AuthenticatedExamTimetableRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/finance-fee-structure': typeof AuthenticatedFinanceFeeStructureRoute
+  '/finance-general-ledger': typeof AuthenticatedFinanceGeneralLedgerRoute
+  '/finance-inventory': typeof AuthenticatedFinanceInventoryRoute
+  '/finance-invoices': typeof AuthenticatedFinanceInvoicesRoute
+  '/finance-payments': typeof AuthenticatedFinancePaymentsRoute
+  '/finance-statements': typeof AuthenticatedFinanceStatementsRoute
+  '/general-ledger': typeof AuthenticatedGeneralLedgerRoute
   '/grading': typeof AuthenticatedGradingRoute
+  '/inventory': typeof AuthenticatedInventoryRoute
   '/learners': typeof AuthenticatedLearnersRouteWithChildren
   '/marks': typeof AuthenticatedMarksRoute
   '/messages': typeof AuthenticatedMessagesRoute
@@ -409,6 +511,7 @@ export interface FileRoutesByTo {
   '/report-card-approvals': typeof AuthenticatedReportCardApprovalsRoute
   '/report-management': typeof AuthenticatedReportManagementRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/security': typeof AuthenticatedSecurityRouteWithChildren
   '/select-role': typeof AuthenticatedSelectRoleRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/staff': typeof AuthenticatedStaffRoute
@@ -417,6 +520,9 @@ export interface FileRoutesByTo {
   '/timetable': typeof AuthenticatedTimetableRoute
   '/transition': typeof AuthenticatedTransitionRoute
   '/learners/$learnerId': typeof AuthenticatedLearnersLearnerIdRoute
+  '/security/history': typeof AuthenticatedSecurityHistoryRoute
+  '/security/reports': typeof AuthenticatedSecurityReportsRoute
+  '/security/today': typeof AuthenticatedSecurityTodayRoute
   '/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRouteWithChildren
   '/super-admin': typeof AuthenticatedSuperAdminIndexRoute
   '/super-admin/schools/$schoolId': typeof AuthenticatedSuperAdminSchoolsSchoolIdRoute
@@ -443,7 +549,15 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/exam-timetable': typeof AuthenticatedExamTimetableRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
+  '/_authenticated/finance-fee-structure': typeof AuthenticatedFinanceFeeStructureRoute
+  '/_authenticated/finance-general-ledger': typeof AuthenticatedFinanceGeneralLedgerRoute
+  '/_authenticated/finance-inventory': typeof AuthenticatedFinanceInventoryRoute
+  '/_authenticated/finance-invoices': typeof AuthenticatedFinanceInvoicesRoute
+  '/_authenticated/finance-payments': typeof AuthenticatedFinancePaymentsRoute
+  '/_authenticated/finance-statements': typeof AuthenticatedFinanceStatementsRoute
+  '/_authenticated/general-ledger': typeof AuthenticatedGeneralLedgerRoute
   '/_authenticated/grading': typeof AuthenticatedGradingRoute
+  '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/learners': typeof AuthenticatedLearnersRouteWithChildren
   '/_authenticated/marks': typeof AuthenticatedMarksRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
@@ -460,6 +574,7 @@ export interface FileRoutesById {
   '/_authenticated/report-card-approvals': typeof AuthenticatedReportCardApprovalsRoute
   '/_authenticated/report-management': typeof AuthenticatedReportManagementRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/security': typeof AuthenticatedSecurityRouteWithChildren
   '/_authenticated/select-role': typeof AuthenticatedSelectRoleRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
@@ -469,6 +584,9 @@ export interface FileRoutesById {
   '/_authenticated/timetable': typeof AuthenticatedTimetableRoute
   '/_authenticated/transition': typeof AuthenticatedTransitionRoute
   '/_authenticated/learners/$learnerId': typeof AuthenticatedLearnersLearnerIdRoute
+  '/_authenticated/security/history': typeof AuthenticatedSecurityHistoryRoute
+  '/_authenticated/security/reports': typeof AuthenticatedSecurityReportsRoute
+  '/_authenticated/security/today': typeof AuthenticatedSecurityTodayRoute
   '/_authenticated/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRouteWithChildren
   '/_authenticated/super-admin/': typeof AuthenticatedSuperAdminIndexRoute
   '/_authenticated/super-admin/schools/$schoolId': typeof AuthenticatedSuperAdminSchoolsSchoolIdRoute
@@ -495,7 +613,15 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/exam-timetable'
     | '/finance'
+    | '/finance-fee-structure'
+    | '/finance-general-ledger'
+    | '/finance-inventory'
+    | '/finance-invoices'
+    | '/finance-payments'
+    | '/finance-statements'
+    | '/general-ledger'
     | '/grading'
+    | '/inventory'
     | '/learners'
     | '/marks'
     | '/messages'
@@ -512,6 +638,7 @@ export interface FileRouteTypes {
     | '/report-card-approvals'
     | '/report-management'
     | '/reports'
+    | '/security'
     | '/select-role'
     | '/settings'
     | '/staff'
@@ -521,6 +648,9 @@ export interface FileRouteTypes {
     | '/timetable'
     | '/transition'
     | '/learners/$learnerId'
+    | '/security/history'
+    | '/security/reports'
+    | '/security/today'
     | '/super-admin/schools'
     | '/super-admin/'
     | '/super-admin/schools/$schoolId'
@@ -545,7 +675,15 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/exam-timetable'
     | '/finance'
+    | '/finance-fee-structure'
+    | '/finance-general-ledger'
+    | '/finance-inventory'
+    | '/finance-invoices'
+    | '/finance-payments'
+    | '/finance-statements'
+    | '/general-ledger'
     | '/grading'
+    | '/inventory'
     | '/learners'
     | '/marks'
     | '/messages'
@@ -562,6 +700,7 @@ export interface FileRouteTypes {
     | '/report-card-approvals'
     | '/report-management'
     | '/reports'
+    | '/security'
     | '/select-role'
     | '/settings'
     | '/staff'
@@ -570,6 +709,9 @@ export interface FileRouteTypes {
     | '/timetable'
     | '/transition'
     | '/learners/$learnerId'
+    | '/security/history'
+    | '/security/reports'
+    | '/security/today'
     | '/super-admin/schools'
     | '/super-admin'
     | '/super-admin/schools/$schoolId'
@@ -595,7 +737,15 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/exam-timetable'
     | '/_authenticated/finance'
+    | '/_authenticated/finance-fee-structure'
+    | '/_authenticated/finance-general-ledger'
+    | '/_authenticated/finance-inventory'
+    | '/_authenticated/finance-invoices'
+    | '/_authenticated/finance-payments'
+    | '/_authenticated/finance-statements'
+    | '/_authenticated/general-ledger'
     | '/_authenticated/grading'
+    | '/_authenticated/inventory'
     | '/_authenticated/learners'
     | '/_authenticated/marks'
     | '/_authenticated/messages'
@@ -612,6 +762,7 @@ export interface FileRouteTypes {
     | '/_authenticated/report-card-approvals'
     | '/_authenticated/report-management'
     | '/_authenticated/reports'
+    | '/_authenticated/security'
     | '/_authenticated/select-role'
     | '/_authenticated/settings'
     | '/_authenticated/staff'
@@ -621,6 +772,9 @@ export interface FileRouteTypes {
     | '/_authenticated/timetable'
     | '/_authenticated/transition'
     | '/_authenticated/learners/$learnerId'
+    | '/_authenticated/security/history'
+    | '/_authenticated/security/reports'
+    | '/_authenticated/security/today'
     | '/_authenticated/super-admin/schools'
     | '/_authenticated/super-admin/'
     | '/_authenticated/super-admin/schools/$schoolId'
@@ -770,11 +924,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/finance-fee-structure': {
+      id: '/_authenticated/finance-fee-structure'
+      path: '/finance-fee-structure'
+      fullPath: '/finance-fee-structure'
+      preLoaderRoute: typeof AuthenticatedFinanceFeeStructureRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance-general-ledger': {
+      id: '/_authenticated/finance-general-ledger'
+      path: '/finance-general-ledger'
+      fullPath: '/finance-general-ledger'
+      preLoaderRoute: typeof AuthenticatedFinanceGeneralLedgerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance-inventory': {
+      id: '/_authenticated/finance-inventory'
+      path: '/finance-inventory'
+      fullPath: '/finance-inventory'
+      preLoaderRoute: typeof AuthenticatedFinanceInventoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance-invoices': {
+      id: '/_authenticated/finance-invoices'
+      path: '/finance-invoices'
+      fullPath: '/finance-invoices'
+      preLoaderRoute: typeof AuthenticatedFinanceInvoicesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance-payments': {
+      id: '/_authenticated/finance-payments'
+      path: '/finance-payments'
+      fullPath: '/finance-payments'
+      preLoaderRoute: typeof AuthenticatedFinancePaymentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance-statements': {
+      id: '/_authenticated/finance-statements'
+      path: '/finance-statements'
+      fullPath: '/finance-statements'
+      preLoaderRoute: typeof AuthenticatedFinanceStatementsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/general-ledger': {
+      id: '/_authenticated/general-ledger'
+      path: '/general-ledger'
+      fullPath: '/general-ledger'
+      preLoaderRoute: typeof AuthenticatedGeneralLedgerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/grading': {
       id: '/_authenticated/grading'
       path: '/grading'
       fullPath: '/grading'
       preLoaderRoute: typeof AuthenticatedGradingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inventory': {
+      id: '/_authenticated/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof AuthenticatedInventoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/learners': {
@@ -889,6 +1099,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/security': {
+      id: '/_authenticated/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof AuthenticatedSecurityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/select-role': {
       id: '/_authenticated/select-role'
       path: '/select-role'
@@ -952,6 +1169,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLearnersLearnerIdRouteImport
       parentRoute: typeof AuthenticatedLearnersRoute
     }
+    '/_authenticated/security/history': {
+      id: '/_authenticated/security/history'
+      path: '/history'
+      fullPath: '/security/history'
+      preLoaderRoute: typeof AuthenticatedSecurityHistoryRouteImport
+      parentRoute: typeof AuthenticatedSecurityRoute
+    }
+    '/_authenticated/security/reports': {
+      id: '/_authenticated/security/reports'
+      path: '/reports'
+      fullPath: '/security/reports'
+      preLoaderRoute: typeof AuthenticatedSecurityReportsRouteImport
+      parentRoute: typeof AuthenticatedSecurityRoute
+    }
+    '/_authenticated/security/today': {
+      id: '/_authenticated/security/today'
+      path: '/today'
+      fullPath: '/security/today'
+      preLoaderRoute: typeof AuthenticatedSecurityTodayRouteImport
+      parentRoute: typeof AuthenticatedSecurityRoute
+    }
     '/_authenticated/super-admin/': {
       id: '/_authenticated/super-admin/'
       path: '/'
@@ -994,6 +1232,23 @@ const AuthenticatedLearnersRouteChildren: AuthenticatedLearnersRouteChildren = {
 const AuthenticatedLearnersRouteWithChildren =
   AuthenticatedLearnersRoute._addFileChildren(
     AuthenticatedLearnersRouteChildren,
+  )
+
+interface AuthenticatedSecurityRouteChildren {
+  AuthenticatedSecurityHistoryRoute: typeof AuthenticatedSecurityHistoryRoute
+  AuthenticatedSecurityReportsRoute: typeof AuthenticatedSecurityReportsRoute
+  AuthenticatedSecurityTodayRoute: typeof AuthenticatedSecurityTodayRoute
+}
+
+const AuthenticatedSecurityRouteChildren: AuthenticatedSecurityRouteChildren = {
+  AuthenticatedSecurityHistoryRoute: AuthenticatedSecurityHistoryRoute,
+  AuthenticatedSecurityReportsRoute: AuthenticatedSecurityReportsRoute,
+  AuthenticatedSecurityTodayRoute: AuthenticatedSecurityTodayRoute,
+}
+
+const AuthenticatedSecurityRouteWithChildren =
+  AuthenticatedSecurityRoute._addFileChildren(
+    AuthenticatedSecurityRouteChildren,
   )
 
 interface AuthenticatedSuperAdminSchoolsRouteChildren {
@@ -1046,7 +1301,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExamTimetableRoute: typeof AuthenticatedExamTimetableRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
+  AuthenticatedFinanceFeeStructureRoute: typeof AuthenticatedFinanceFeeStructureRoute
+  AuthenticatedFinanceGeneralLedgerRoute: typeof AuthenticatedFinanceGeneralLedgerRoute
+  AuthenticatedFinanceInventoryRoute: typeof AuthenticatedFinanceInventoryRoute
+  AuthenticatedFinanceInvoicesRoute: typeof AuthenticatedFinanceInvoicesRoute
+  AuthenticatedFinancePaymentsRoute: typeof AuthenticatedFinancePaymentsRoute
+  AuthenticatedFinanceStatementsRoute: typeof AuthenticatedFinanceStatementsRoute
+  AuthenticatedGeneralLedgerRoute: typeof AuthenticatedGeneralLedgerRoute
   AuthenticatedGradingRoute: typeof AuthenticatedGradingRoute
+  AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedLearnersRoute: typeof AuthenticatedLearnersRouteWithChildren
   AuthenticatedMarksRoute: typeof AuthenticatedMarksRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
@@ -1063,6 +1326,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportCardApprovalsRoute: typeof AuthenticatedReportCardApprovalsRoute
   AuthenticatedReportManagementRoute: typeof AuthenticatedReportManagementRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedSecurityRoute: typeof AuthenticatedSecurityRouteWithChildren
   AuthenticatedSelectRoleRoute: typeof AuthenticatedSelectRoleRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
@@ -1088,7 +1352,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExamTimetableRoute: AuthenticatedExamTimetableRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
+  AuthenticatedFinanceFeeStructureRoute: AuthenticatedFinanceFeeStructureRoute,
+  AuthenticatedFinanceGeneralLedgerRoute:
+    AuthenticatedFinanceGeneralLedgerRoute,
+  AuthenticatedFinanceInventoryRoute: AuthenticatedFinanceInventoryRoute,
+  AuthenticatedFinanceInvoicesRoute: AuthenticatedFinanceInvoicesRoute,
+  AuthenticatedFinancePaymentsRoute: AuthenticatedFinancePaymentsRoute,
+  AuthenticatedFinanceStatementsRoute: AuthenticatedFinanceStatementsRoute,
+  AuthenticatedGeneralLedgerRoute: AuthenticatedGeneralLedgerRoute,
   AuthenticatedGradingRoute: AuthenticatedGradingRoute,
+  AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedLearnersRoute: AuthenticatedLearnersRouteWithChildren,
   AuthenticatedMarksRoute: AuthenticatedMarksRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
@@ -1105,6 +1378,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportCardApprovalsRoute: AuthenticatedReportCardApprovalsRoute,
   AuthenticatedReportManagementRoute: AuthenticatedReportManagementRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedSecurityRoute: AuthenticatedSecurityRouteWithChildren,
   AuthenticatedSelectRoleRoute: AuthenticatedSelectRoleRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStaffRoute: AuthenticatedStaffRoute,

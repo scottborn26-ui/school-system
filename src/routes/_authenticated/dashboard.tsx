@@ -58,7 +58,7 @@ import {
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard · SHANSCOTT CBE School Management" },
+      { title: "Dashboard · smartschool" },
       {
         name: "description",
         content:
@@ -260,7 +260,7 @@ function SchoolDashboardPage() {
         (() => {
           const attendanceQuery = supabase
             .from("attendance_records")
-            .select("status, attendance_date, stream_id")
+            .select("status, attendance_date, stream_id, learner_id, timetable_slot_id")
             .eq("school_id", schoolId)
             .gte("attendance_date", weekStart)
             .lte("attendance_date", today);
@@ -451,25 +451,43 @@ function SchoolDashboardPage() {
         ? (record: { stream_id?: string | null }) =>
             Boolean(record.stream_id && visibleTeacherStreamIds.has(record.stream_id))
         : () => true;
+  const attendanceLearners = active.filter((learner) =>
+    isTeacherDashboard
+      ? Boolean(
+          learner.current_stream_id &&
+            visibleTeacherStreamIds.has(learner.current_stream_id) &&
+            (!selectedTeacherStream || learner.current_stream_id === selectedTeacherStream),
+        )
+      : true,
+  );
+  const attendanceLearnerIds = new Set(attendanceLearners.map((learner) => learner.id));
 
   const todayAttendance = (data?.attendance ?? []).filter(
-    (record) => record.attendance_date === today && attendanceScope(record),
+    (record) =>
+      record.attendance_date === today &&
+      record.timetable_slot_id === null &&
+      attendanceScope(record) &&
+      attendanceLearnerIds.has(record.learner_id),
   );
   const attendancePresent = todayAttendance.filter((record) =>
     ["present", "late"].includes(record.status),
   ).length;
-  const attendanceTotal = todayAttendance.length;
+  const attendanceTotal = attendanceLearners.length;
   const attendanceByDay = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(Date.now() - (6 - index) * 24 * 60 * 60 * 1000);
     const key = date.toISOString().slice(0, 10);
     const records = (data?.attendance ?? []).filter(
-      (record) => record.attendance_date === key && attendanceScope(record),
+      (record) =>
+        record.attendance_date === key &&
+        record.timetable_slot_id === null &&
+        attendanceScope(record) &&
+        attendanceLearnerIds.has(record.learner_id),
     );
     const present = records.filter((record) => ["present", "late"].includes(record.status)).length;
     return {
       key,
       label: date.toLocaleDateString("en-KE", { weekday: "short" }),
-      value: records.length ? Math.round((present / records.length) * 100) : 0,
+      value: attendanceTotal ? Math.round((present / attendanceTotal) * 100) : 0,
     };
   });
   const upcomingEvents = data?.events ?? [];
@@ -1922,7 +1940,7 @@ function ExamOfficerDashboard() {
         </Card>
       </div>
       <footer className="flex flex-wrap justify-between gap-2 border-t pt-5 text-xs text-muted-foreground">
-        <span>© 2024 School Management System. All rights reserved.</span>
+        <span>© 2024 smartschool. All rights reserved.</span>
         <span>SMS Version 2.0.0</span>
       </footer>
     </div>

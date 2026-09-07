@@ -34,6 +34,7 @@ import { PhotoUploader } from "@/components/photo-uploader";
 import { supabase } from "@/lib/supabase";
 import { useSchool } from "@/hooks/use-school";
 import { GRADE_LABELS, type CbeGrade } from "@/lib/cbe";
+import { isTeachingStaffRole, STAFF_ACCOUNT_ROLES } from "@/lib/staff-roles";
 import { canViewSensitiveStaffDocuments, getPersonDisplayName } from "@/lib/detail-panel";
 import { formatDate, KE_PHONE_REGEX, normalizeKePhone } from "@/lib/format";
 import {
@@ -59,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/staff")({
     ],
   }),
   component: () => (
-    <RequireSchool roles={["principal", "deputy"]}>
+    <RequireSchool roles={["admin", "principal", "deputy"]}>
       <StaffPage />
     </RequireSchool>
   ),
@@ -68,6 +69,7 @@ export const Route = createFileRoute("/_authenticated/staff")({
 interface StaffRow {
   id: string;
   user_id: string | null;
+  account_role: string | null;
   staff_number: string;
   full_name: string;
   tsc_number: string | null;
@@ -126,7 +128,7 @@ function StaffPage() {
         supabase
           .from("staff")
           .select(
-            "id, user_id, staff_number, full_name, tsc_number, job_title, employment_type, phone, email, employment_date, status, assigned_grade, assigned_grades, class_teacher_grade, photo_url, gender, national_id",
+            "id, user_id, staff_number, full_name, account_role, tsc_number, job_title, employment_type, phone, email, employment_date, status, assigned_grade, assigned_grades, class_teacher_grade, photo_url, gender, national_id",
           )
           .eq("school_id", schoolId)
           .eq("is_archived", false)
@@ -148,7 +150,7 @@ function StaffPage() {
       const fallback = await supabase
         .from("staff")
         .select(
-          "id, user_id, staff_number, full_name, tsc_number, job_title, employment_type, phone, email, employment_date, status, assigned_grade",
+          "id, user_id, staff_number, full_name, account_role, tsc_number, job_title, employment_type, phone, email, employment_date, status, assigned_grade",
         )
         .eq("school_id", schoolId)
         .eq("is_archived", false)
@@ -870,6 +872,7 @@ function EditStaffDialog({
   const school = useSchool();
   const [form, setForm] = useState({
     full_name: staff.full_name,
+    role: staff.account_role ?? (staff.tsc_number || staff.assigned_grades?.length ? "teacher" : "security"),
     tsc_number: staff.tsc_number ?? "",
     gender: staff.gender ?? "",
     photo_url: staff.photo_url ?? null,
@@ -916,6 +919,7 @@ function EditStaffDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
+  const teachingRole = isTeachingStaffRole(form.role);
   const mutation = useMutation({
     mutationFn: async () => {
       if (
@@ -928,7 +932,8 @@ function EditStaffDialog({
         .from("staff")
         .update({
           full_name: form.full_name.trim(),
-          tsc_number: form.tsc_number.trim() || null,
+          account_role: form.role,
+          tsc_number: teachingRole ? form.tsc_number.trim() || null : null,
           gender: form.gender || null,
           photo_url: form.photo_url,
           job_title: form.job_title.trim() || null,
@@ -936,9 +941,9 @@ function EditStaffDialog({
           phone: form.phone ? normalizeKePhone(form.phone) : null,
           email: form.email.trim() || null,
           employment_date: form.employment_date || null,
-          assigned_grade: form.assigned_grades[0] ?? null,
-          assigned_grades: form.assigned_grades,
-          class_teacher_grade: form.class_teacher_grade
+          assigned_grade: teachingRole ? form.assigned_grades[0] ?? null : null,
+          assigned_grades: teachingRole ? form.assigned_grades : [],
+          class_teacher_grade: teachingRole && form.class_teacher_grade
             ? (form.class_teacher_grade as CbeGrade)
             : null,
         })
@@ -1020,9 +1025,11 @@ function EditStaffDialog({
             <FieldRow label="Full name *" error={errors.full_name}>
               <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} />
             </FieldRow>
-            <FieldRow label="TSC number">
-              <Input value={form.tsc_number} onChange={(e) => set("tsc_number", e.target.value)} />
-            </FieldRow>
+            {teachingRole && (
+              <FieldRow label="TSC number">
+                <Input value={form.tsc_number} onChange={(e) => set("tsc_number", e.target.value)} />
+              </FieldRow>
+            )}
             <FieldRow label="Gender">
               <Select value={form.gender} onValueChange={(value) => set("gender", value)}>
                 <SelectTrigger>
@@ -1057,7 +1064,22 @@ function EditStaffDialog({
                 </SelectContent>
               </Select>
             </FieldRow>
-            <FieldRow label="Class-teacher grade">
+            <FieldRow label="Account role">
+              <Select value={form.role} onValueChange={(value) => {
+                if (isTeachingStaffRole(form.role) && !isTeachingStaffRole(value) && !window.confirm("Switching to a non-teaching role will clear TSC, assigned grades, and class-teacher details. Continue?")) return;
+                set("role", value);
+                if (!isTeachingStaffRole(value)) {
+                  set("tsc_number", "");
+                  set("assigned_grades", []);
+                  set("class_teacher_grade", "");
+                  set("class_teacher_stream_id", "");
+                }
+              }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{STAFF_ACCOUNT_ROLES.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </FieldRow>
+            {teachingRole && <FieldRow label="Class-teacher grade">
               <Select
                 value={form.class_teacher_grade}
                 onValueChange={(value) => set("class_teacher_grade", value)}
@@ -1073,8 +1095,8 @@ function EditStaffDialog({
                   ))}
                 </SelectContent>
               </Select>
-            </FieldRow>
-            <FieldRow label="Class-teacher stream">
+            </FieldRow>}
+            {teachingRole && <FieldRow label="Class-teacher stream">
               <Select
                 value={form.class_teacher_stream_id}
                 onValueChange={(value) => set("class_teacher_stream_id", value)}
@@ -1093,8 +1115,8 @@ function EditStaffDialog({
                   {!availableClassStreams.length && <SelectItem value="none" disabled>No available streams</SelectItem>}
                 </SelectContent>
               </Select>
-            </FieldRow>
-            <FieldRow label="Assigned grades" className="sm:col-span-2">
+            </FieldRow>}
+            {teachingRole && <FieldRow label="Assigned grades" className="sm:col-span-2">
               <div className="rounded-xl border border-primary/25 bg-background/50 p-3 shadow-sm">
                 <div className="mb-2 flex items-center justify-between border-b border-border/60 pb-2">
                   <span className="text-xs text-muted-foreground">
@@ -1147,7 +1169,7 @@ function EditStaffDialog({
                   })}
                 </div>
               </div>
-            </FieldRow>
+            </FieldRow>}
           </div>
         </section>
         <section className="rounded-xl border border-border/80 bg-card/70 p-4 shadow-sm">
@@ -1235,6 +1257,7 @@ function StaffDialog({
     class_teacher_grade: "",
     class_teacher_stream_id: "",
   });
+  const teachingRole = isTeachingStaffRole(form.role);
 
   const { data: classStreams = [] } = useQuery({
     queryKey: ["class-teacher-streams", schoolId],
@@ -1269,13 +1292,13 @@ function StaffDialog({
           nationalId: form.national_id,
           gender: form.gender,
           jobTitle: form.job_title,
-          role: form.role as "teacher" | "class_teacher" | "exam_officer" | "accountant",
+          role: form.role as "teacher" | "class_teacher" | "exam_officer" | "accountant" | "security",
           employmentType: form.employment_type,
           phone: form.phone ? normalizeKePhone(form.phone) : "",
           employmentDate: form.employment_date,
-          assignedGrades: form.assigned_grades,
-          classTeacherGrade: form.class_teacher_grade,
-          classTeacherStreamId: form.class_teacher_stream_id || undefined,
+          assignedGrades: teachingRole ? form.assigned_grades : [],
+          classTeacherGrade: teachingRole ? form.class_teacher_grade : undefined,
+          classTeacherStreamId: teachingRole ? form.class_teacher_stream_id || undefined : undefined,
         },
       });
       await supabase.from("audit_logs").insert({
@@ -1353,9 +1376,9 @@ function StaffDialog({
         <FieldRow label="Full name *" error={errors["full_name"]}>
           <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} />
         </FieldRow>
-        <FieldRow label="TSC number">
+        {teachingRole && <FieldRow label="TSC number">
           <Input value={form.tsc_number} onChange={(e) => set("tsc_number", e.target.value)} />
-        </FieldRow>
+        </FieldRow>}
         <FieldRow label="National ID">
           <Input value={form.national_id} onChange={(e) => set("national_id", e.target.value)} />
         </FieldRow>
@@ -1378,7 +1401,8 @@ function StaffDialog({
             value={form.role}
             onValueChange={(v) => {
               set("role", v);
-              if (v === "exam_officer" || v === "accountant") {
+              if (!isTeachingStaffRole(v)) {
+                set("tsc_number", "");
                 set("assigned_grades", []);
                 set("class_teacher_grade", "");
                 set("class_teacher_stream_id", "");
@@ -1388,15 +1412,10 @@ function StaffDialog({
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="teacher">Teacher</SelectItem>
-              <SelectItem value="class_teacher">Class teacher</SelectItem>
-              <SelectItem value="exam_officer">Exam Officer</SelectItem>
-              <SelectItem value="accountant">Accountant</SelectItem>
-            </SelectContent>
+            <SelectContent>{STAFF_ACCOUNT_ROLES.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent>
           </Select>
         </FieldRow>
-        {form.role !== "exam_officer" && form.role !== "accountant" && (
+        {teachingRole && (
           <FieldRow label="Assigned grades">
             <div className="grid grid-cols-2 gap-2 rounded-md border p-3">
               {school.grades.map((grade) => (
@@ -1422,7 +1441,7 @@ function StaffDialog({
             </div>
           </FieldRow>
         )}
-        {form.role !== "exam_officer" && form.role !== "accountant" && (
+        {teachingRole && (
           <>
             <FieldRow label="Class-teacher grade">
             <Select

@@ -13,9 +13,9 @@ const CreateStaffInput = z.object({
   nationalId: z.string().max(50, "National ID is too long").optional(),
   gender: z.string().max(20, "Gender value is too long").optional(),
   jobTitle: z.string().max(100, "Job title is too long").optional(),
-  role: z.enum(["teacher", "class_teacher", "exam_officer", "accountant"], {
+  role: z.enum(["teacher", "class_teacher", "exam_officer", "accountant", "security"], {
     errorMap: () => ({
-      message: "Role must be one of: teacher, class_teacher, exam_officer, or accountant",
+      message: "Role must be one of: teacher, class_teacher, exam_officer, accountant, or security",
     }),
   }),
   employmentType: z.string().max(50, "Employment type is too long").optional(),
@@ -70,7 +70,7 @@ export const createStaffWithAccount = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .eq("school_id", data.schoolId)
       .eq("is_active", true)
-      .in("role", ["principal", "deputy"])
+      .in("role", ["admin", "principal", "deputy"])
       .maybeSingle();
 
     if (adminRoleError) {
@@ -78,7 +78,7 @@ export const createStaffWithAccount = createServerFn({ method: "POST" })
     }
 
     if (!adminRole) {
-      throw new Error("Only a principal or deputy can create staff accounts.");
+      throw new Error("Only a school administrator, principal, or deputy can create staff accounts.");
     }
 
     // Step 2: Import Supabase Admin client
@@ -94,17 +94,14 @@ export const createStaffWithAccount = createServerFn({ method: "POST" })
       throw new Error(`Failed to check for existing accounts: ${lookupError.message}`);
     }
 
-    if (userList.users.some((user) => user.email?.trim().toLowerCase() === normalizedEmail)) {
-      throw new Error(
-        `An account already exists for ${normalizedEmail}. Each teacher must have a unique email address.`,
-      );
-    }
+    const existingAuthUser = userList.users.find(
+      (user) => user.email?.trim().toLowerCase() === normalizedEmail,
+    );
 
     // Step 4: Check for duplicate email in staff table
     const { data: allStaff, error: staffCheckError } = await supabaseAdmin
       .from("staff")
-      .select("id, email")
-      .eq("school_id", data.schoolId)
+      .select("id, email, user_id, school_id")
       .eq("is_archived", false);
 
     if (staffCheckError) {
@@ -121,26 +118,49 @@ export const createStaffWithAccount = createServerFn({ method: "POST" })
       );
     }
 
+    if (existingAuthUser && allStaff?.some((staff) => staff.user_id === existingAuthUser.id)) {
+      throw new Error(
+        `An account already exists for ${normalizedEmail}. Each staff member must have a unique email address.`,
+      );
+    }
+
     // Step 5: Generate a one-time temporary password that is shown only to the admin.
     const temporaryPassword = generateTemporaryPassword();
 
     // Step 6: Create Supabase Auth user
-    const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: normalizedEmail,
-      password: temporaryPassword,
-      email_confirm: true,
-      user_metadata: {
-        full_name: data.fullName.trim(),
-        role: data.role,
-        created_by_admin: true,
-      },
-    });
+    const created = existingAuthUser
+      ? { user: existingAuthUser }
+      : (await supabaseAdmin.auth.admin.createUser({
+          email: normalizedEmail,
+          password: temporaryPassword,
+          email_confirm: true,
+          user_metadata: {
+            full_name: data.fullName.trim(),
+            role: data.role,
+            created_by_admin: true,
+          },
+        })).data;
 
-    if (createError || !created.user) {
+    if (!created?.user) {
       throw new Error(
-        createError?.message ??
-          "The authentication account could not be created. Please verify the email is valid and try again.",
+        "The authentication account could not be created. Please verify the email is valid and try again.",
       );
+    }
+
+    if (existingAuthUser) {
+      const { error: resetError } = await supabaseAdmin.auth.admin.updateUserById(
+        existingAuthUser.id,
+        {
+          password: temporaryPassword,
+          user_metadata: {
+            ...existingAuthUser.user_metadata,
+            full_name: data.fullName.trim(),
+            role: data.role,
+            created_by_admin: true,
+          },
+        },
+      );
+      if (resetError) throw new Error(`The existing account could not be repaired: ${resetError.message}`);
     }
 
     // Step 7: Create staff record
@@ -152,7 +172,7 @@ export const createStaffWithAccount = createServerFn({ method: "POST" })
         _actor_id: context.userId,
         _staff: {
           full_name: data.fullName.trim(),
-          tsc_number: data.tscNumber?.trim() || null,
+          tsc_number: ["teacher", "class_teacher"].includes(data.role) ? data.tscNumber?.trim() || null : null,
           national_id: data.nationalId?.trim() || null,
           gender: data.gender || null,
           job_title: data.jobTitle?.trim() || null,
@@ -160,21 +180,24 @@ export const createStaffWithAccount = createServerFn({ method: "POST" })
           phone: data.phone?.trim() || null,
           email: normalizedEmail,
           employment_date: data.employmentDate || null,
-          assigned_grade: data.assignedGrades[0] || null,
-          assigned_grades: data.assignedGrades,
-          class_teacher_grade: data.classTeacherGrade || null,
-          class_teacher_stream_id: data.classTeacherStreamId || null,
+          account_role: data.role,
+          assigned_grade: ["teacher", "class_teacher"].includes(data.role) ? data.assignedGrades[0] || null : null,
+          assigned_grades: ["teacher", "class_teacher"].includes(data.role) ? data.assignedGrades : [],
+          class_teacher_grade: ["teacher", "class_teacher"].includes(data.role) ? data.classTeacherGrade || null : null,
+          class_teacher_stream_id: ["teacher", "class_teacher"].includes(data.role) ? data.classTeacherStreamId || null : null,
         },
         _role: data.role,
       },
     );
 
     if (transactionError || !staffId) {
-      // Rollback: Delete the created auth user to prevent orphan accounts
-      try {
-        await supabaseAdmin.auth.admin.deleteUser(created.user.id);
-      } catch {
-        // Silently fail if rollback fails; the user should contact support
+      // Roll back only users created by this request. Existing orphaned Auth users are preserved.
+      if (!existingAuthUser) {
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(created.user.id);
+        } catch {
+          // Preserve the original transaction error.
+        }
       }
 
       const errorMsg =

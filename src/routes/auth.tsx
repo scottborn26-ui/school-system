@@ -35,12 +35,12 @@ export const Route = createFileRoute("/auth")({
   },
   head: () => ({
     meta: [
-      { title: "Sign in · SHANSCOTT CBE School Management" },
+      { title: "Sign in · smartschool" },
       {
         name: "description",
-        content: "Sign in to your Kenyan CBE school account or register a new school on SHANSCOTT.",
+        content: "Sign in to your Kenyan CBE school account or register a new school on smartschool.",
       },
-      { property: "og:title", content: "Sign in · SHANSCOTT CBE School Management" },
+      { property: "og:title", content: "Sign in · smartschool" },
       {
         property: "og:description",
         content: "Access admissions, assessment, attendance and fees for your CBE school.",
@@ -125,7 +125,7 @@ function AuthPage() {
         ? row.role === "super_admin"
         : selectedRole === "principal"
           ? row.role === "principal" && !staff
-          : ["admin", "accountant", "exam_officer", "teacher", "class_teacher"].includes(row.role) && Boolean(staff),
+          : ["admin", "accountant", "exam_officer", "teacher", "class_teacher", "security"].includes(row.role) && Boolean(staff),
     )?.role;
     if (!authenticatedRole) {
       if (selectedRole === "principal" && !staff && (memberships ?? []).length === 0) {
@@ -244,7 +244,7 @@ function AuthPage() {
               <strong className="block text-2xl tracking-tight">
                 S<span>M</span>S
               </strong>
-              <small>School Management System</small>
+              <small>smartschool</small>
             </span>
           </Link>
           <div className="auth-hero-copy mt-auto max-w-[600px]">
@@ -252,7 +252,7 @@ function AuthPage() {
             <h1>
               Welcome to
               <br />
-              <span>School Management System</span>
+              <span>smartschool</span>
             </h1>
             <p className="auth-hero-description">
               A secure, simple, and smart platform that brings your whole school community together.
@@ -279,7 +279,7 @@ function AuthPage() {
             </div>
           </div>
           <div className="auth-hero-footer">
-            <LockKeyhole className="size-3.5" /> Secure Login <i /> © 2024 School Management System.
+            <LockKeyhole className="size-3.5" /> Secure Login <i /> © 2024 smartschool.
             All rights reserved.
           </div>
         </section>
@@ -340,14 +340,6 @@ function AuthPage() {
                           theme="green"
                           selected={selectedRole === "staff"}
                           onClick={() => setSelectedRole("staff")}
-                        />
-                        <RoleChoice
-                          icon={ShieldCheck}
-                          title="Super Admin"
-                          description="Manage schools, platform access, features and system accountability across SHANSCOTT."
-                          theme="blue"
-                          selected={selectedRole === "super_admin"}
-                          onClick={() => setSelectedRole("super_admin")}
                         />
                         <RoleChoice
                           icon={UserRound}

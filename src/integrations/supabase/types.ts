@@ -551,48 +551,90 @@ export type Database = {
       };
       inventory_items: {
         Row: {
+          acquired_on: string | null;
+          asset_tag: string | null;
           category: string;
+          item_condition: string;
+          custodian: string | null;
           created_at: string;
+          depreciation_method: string | null;
+          description: string | null;
           id: string;
+          is_capital_asset: boolean;
           is_active: boolean;
+          item_code: string;
           name: string;
           notes: string | null;
+          location: string | null;
+          photo_url: string | null;
           quantity_on_hand: number;
           reorder_level: number;
+          salvage_value: number;
           school_id: string;
+          serial_number: string | null;
           supplier: string | null;
+          subcategory: string | null;
           unit: string;
           unit_cost: number;
+          useful_life_years: number | null;
           updated_at: string;
         };
         Insert: {
+          acquired_on?: string | null;
+          asset_tag?: string | null;
           category?: string;
+          item_condition?: string;
+          custodian?: string | null;
           created_at?: string;
+          depreciation_method?: string | null;
+          description?: string | null;
           id?: string;
+          is_capital_asset?: boolean;
           is_active?: boolean;
+          item_code: string;
           name: string;
           notes?: string | null;
+          location?: string | null;
+          photo_url?: string | null;
           quantity_on_hand?: number;
           reorder_level?: number;
+          salvage_value?: number;
           school_id: string;
+          serial_number?: string | null;
           supplier?: string | null;
+          subcategory?: string | null;
           unit?: string;
           unit_cost?: number;
+          useful_life_years?: number | null;
           updated_at?: string;
         };
         Update: {
+          acquired_on?: string | null;
+          asset_tag?: string | null;
           category?: string;
+          item_condition?: string;
+          custodian?: string | null;
           created_at?: string;
+          depreciation_method?: string | null;
+          description?: string | null;
           id?: string;
+          is_capital_asset?: boolean;
           is_active?: boolean;
+          item_code?: string;
           name?: string;
           notes?: string | null;
+          location?: string | null;
+          photo_url?: string | null;
           quantity_on_hand?: number;
           reorder_level?: number;
+          salvage_value?: number;
           school_id?: string;
+          serial_number?: string | null;
           supplier?: string | null;
+          subcategory?: string | null;
           unit?: string;
           unit_cost?: number;
+          useful_life_years?: number | null;
           updated_at?: string;
         };
         Relationships: [
@@ -607,40 +649,55 @@ export type Database = {
       };
       inventory_transactions: {
         Row: {
+          approved_by: string | null;
+          attachment_url: string | null;
           created_at: string;
           created_by: string | null;
+          department: string | null;
           id: string;
           item_id: string;
           notes: string | null;
           quantity: number;
           reference: string | null;
           school_id: string;
+          requested_by: string | null;
+          supplier_id: string | null;
           transaction_date: string;
           transaction_type: string;
           unit_cost: number;
         };
         Insert: {
+          approved_by?: string | null;
+          attachment_url?: string | null;
           created_at?: string;
           created_by?: string | null;
+          department?: string | null;
           id?: string;
           item_id: string;
           notes?: string | null;
           quantity: number;
           reference?: string | null;
           school_id: string;
+          requested_by?: string | null;
+          supplier_id?: string | null;
           transaction_date?: string;
           transaction_type: string;
           unit_cost?: number;
         };
         Update: {
+          approved_by?: string | null;
+          attachment_url?: string | null;
           created_at?: string;
           created_by?: string | null;
+          department?: string | null;
           id?: string;
           item_id?: string;
           notes?: string | null;
           quantity?: number;
           reference?: string | null;
           school_id?: string;
+          requested_by?: string | null;
+          supplier_id?: string | null;
           transaction_date?: string;
           transaction_type?: string;
           unit_cost?: number;
@@ -661,6 +718,42 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      inventory_suppliers: {
+        Row: { address: string | null; contact_person: string | null; created_at: string; email: string | null; id: string; name: string; notes: string | null; phone: string | null; school_id: string; updated_at: string };
+        Insert: { address?: string | null; contact_person?: string | null; created_at?: string; email?: string | null; id?: string; name: string; notes?: string | null; phone?: string | null; school_id: string; updated_at?: string };
+        Update: { address?: string | null; contact_person?: string | null; created_at?: string; email?: string | null; id?: string; name?: string; notes?: string | null; phone?: string | null; school_id?: string; updated_at?: string };
+        Relationships: [{ foreignKeyName: "inventory_suppliers_school_id_fkey"; columns: ["school_id"]; isOneToOne: false; referencedRelation: "schools"; referencedColumns: ["id"] }];
+      };
+      inventory_stock_takes: {
+        Row: { counted_by: string | null; counted_on: string; counted_quantity: number; created_at: string; id: string; item_id: string; notes: string | null; school_id: string; system_quantity: number };
+        Insert: { counted_by?: string | null; counted_on?: string; counted_quantity: number; created_at?: string; id?: string; item_id: string; notes?: string | null; school_id: string; system_quantity: number };
+        Update: { counted_by?: string | null; counted_on?: string; counted_quantity?: number; created_at?: string; id?: string; item_id?: string; notes?: string | null; school_id?: string; system_quantity?: number };
+        Relationships: [{ foreignKeyName: "inventory_stock_takes_item_id_fkey"; columns: ["item_id"]; isOneToOne: false; referencedRelation: "inventory_items"; referencedColumns: ["id"] }, { foreignKeyName: "inventory_stock_takes_school_id_fkey"; columns: ["school_id"]; isOneToOne: false; referencedRelation: "schools"; referencedColumns: ["id"] }];
+      };
+      inventory_maintenance: {
+        Row: { cost: number; created_at: string; description: string; id: string; item_id: string; maintenance_date: string; next_due_on: string | null; school_id: string; vendor: string | null };
+        Insert: { cost?: number; created_at?: string; description: string; id?: string; item_id: string; maintenance_date?: string; next_due_on?: string | null; school_id: string; vendor?: string | null };
+        Update: { cost?: number; created_at?: string; description?: string; id?: string; item_id?: string; maintenance_date?: string; next_due_on?: string | null; school_id?: string; vendor?: string | null };
+        Relationships: [{ foreignKeyName: "inventory_maintenance_item_id_fkey"; columns: ["item_id"]; isOneToOne: false; referencedRelation: "inventory_items"; referencedColumns: ["id"] }, { foreignKeyName: "inventory_maintenance_school_id_fkey"; columns: ["school_id"]; isOneToOne: false; referencedRelation: "schools"; referencedColumns: ["id"] }];
+      };
+      chart_of_accounts: {
+        Row: { id: string; school_id: string; account_code: string; account_name: string; account_type: string; parent_account_id: string | null; normal_balance: string; is_active: boolean; created_at: string; updated_at: string };
+        Insert: { id?: string; school_id: string; account_code: string; account_name: string; account_type: string; parent_account_id?: string | null; normal_balance: string; is_active?: boolean; created_at?: string; updated_at?: string };
+        Update: { id?: string; school_id?: string; account_code?: string; account_name?: string; account_type?: string; parent_account_id?: string | null; normal_balance?: string; is_active?: boolean; created_at?: string; updated_at?: string };
+        Relationships: [{ foreignKeyName: "chart_of_accounts_school_id_fkey"; columns: ["school_id"]; isOneToOne: false; referencedRelation: "schools"; referencedColumns: ["id"] }, { foreignKeyName: "chart_of_accounts_parent_account_id_fkey"; columns: ["parent_account_id"]; isOneToOne: false; referencedRelation: "chart_of_accounts"; referencedColumns: ["id"] }];
+      };
+      journal_entries: {
+        Row: { id: string; school_id: string; entry_number: string; entry_date: string; term_id: string | null; academic_year_id: string | null; source: string; source_reference_id: string | null; narration: string; status: string; created_by: string | null; posted_by: string | null; posted_at: string | null; reversed_by_entry_id: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; school_id: string; entry_number: string; entry_date?: string; term_id?: string | null; academic_year_id?: string | null; source?: string; source_reference_id?: string | null; narration: string; status?: string; created_by?: string | null; posted_by?: string | null; posted_at?: string | null; reversed_by_entry_id?: string | null; created_at?: string; updated_at?: string };
+        Update: { id?: string; school_id?: string; entry_number?: string; entry_date?: string; term_id?: string | null; academic_year_id?: string | null; source?: string; source_reference_id?: string | null; narration?: string; status?: string; created_by?: string | null; posted_by?: string | null; posted_at?: string | null; reversed_by_entry_id?: string | null; created_at?: string; updated_at?: string };
+        Relationships: [{ foreignKeyName: "journal_entries_school_id_fkey"; columns: ["school_id"]; isOneToOne: false; referencedRelation: "schools"; referencedColumns: ["id"] }];
+      };
+      journal_entry_lines: {
+        Row: { id: string; school_id: string; journal_entry_id: string; account_id: string; debit_amount: number; credit_amount: number; description: string | null; department_id: string | null; cost_center_id: string | null };
+        Insert: { id?: string; school_id: string; journal_entry_id: string; account_id: string; debit_amount?: number; credit_amount?: number; description?: string | null; department_id?: string | null; cost_center_id?: string | null };
+        Update: { id?: string; school_id?: string; journal_entry_id?: string; account_id?: string; debit_amount?: number; credit_amount?: number; description?: string | null; department_id?: string | null; cost_center_id?: string | null };
+        Relationships: [{ foreignKeyName: "journal_entry_lines_school_id_fkey"; columns: ["school_id"]; isOneToOne: false; referencedRelation: "schools"; referencedColumns: ["id"] }, { foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"; columns: ["journal_entry_id"]; isOneToOne: false; referencedRelation: "journal_entries"; referencedColumns: ["id"] }, { foreignKeyName: "journal_entry_lines_account_id_fkey"; columns: ["account_id"]; isOneToOne: false; referencedRelation: "chart_of_accounts"; referencedColumns: ["id"] }];
       };
       guardians: {
         Row: {
@@ -2402,6 +2495,10 @@ export type Database = {
         Args: { _learner_id: string; _school_id: string };
         Returns: undefined;
       };
+      delete_chart_of_account: {
+        Args: { _account_id: string; _school_id: string };
+        Returns: undefined;
+      };
       has_school_role: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][];
@@ -2418,6 +2515,10 @@ export type Database = {
         Args: { _key: string; _prefix: string; _school_id: string };
         Returns: string;
       };
+      next_journal_entry_number: { Args: { _school_id: string }; Returns: string };
+      post_journal_entry: { Args: { _journal_entry_id: string }; Returns: Database["public"]["Tables"]["journal_entries"]["Row"] };
+      reverse_journal_entry: { Args: { _journal_entry_id: string; _narration?: string }; Returns: Database["public"]["Tables"]["journal_entries"]["Row"] };
+      seed_school_chart_of_accounts: { Args: { _school_id: string }; Returns: number };
     };
     Enums: {
       app_role:

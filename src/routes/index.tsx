@@ -31,7 +31,7 @@ import { useEffect, useState, type ReactNode } from "react";
 const registerSearch = { mode: "register" } as const;
 
 const quickQuestions = [
-  "What is SHANSCOTT SMS?",
+  "What is smartschool?",
   "What features are available?",
   "How does the teacher portal work?",
   "How do I manage students?",
@@ -158,17 +158,17 @@ const showcaseQuickStats = [
   { label: "Fees", value: "KSh 6.4M" },
 ] as const;
 
-const fallbackReply = "SHANSCOTT SMS helps schools manage learners, teachers, attendance, assessments, fees, timetables, reports, and communication from one connected platform. If you need help with a specific school workflow, I can explain it or connect you to support.";
+const fallbackReply = "smartschool helps schools manage learners, teachers, attendance, assessments, fees, timetables, reports, and communication from one connected platform. If you need help with a specific school workflow, I can explain it or connect you to support.";
 
 const buildAssistantReply = (question: string): string => {
   const text = question.toLowerCase();
 
-  if (text.includes("what is shanscott") || text.includes("what is shanscott sms") || text.includes("what does shanscott do")) {
-    return "SHANSCOTT SMS is a school management system designed for schools to manage learners, teachers, attendance, assessments, fees, timetables, reports and communication from one connected platform.";
+  if (text.includes("what is smartschool") || text.includes("what is shanscott") || text.includes("what does shanscott do")) {
+    return "smartschool is a school management system designed for schools to manage learners, teachers, attendance, assessments, fees, timetables, reports and communication from one connected platform.";
   }
 
   if (text.includes("feature") || text.includes("module") || text.includes("what features") || text.includes("what can it do") || text.includes("capabilities")) {
-    return "SHANSCOTT SMS includes student management, teacher management, attendance tracking, assessments and grading, fees and finance, timetable planning, reporting and analytics, and communication tools for schools and families.";
+    return "smartschool includes student management, teacher management, attendance tracking, assessments and grading, fees and finance, timetable planning, reporting and analytics, and communication tools for schools and families.";
   }
 
   if (text.includes("teacher portal") || text.includes("teacher login") || text.includes("teacher access")) {
@@ -208,11 +208,11 @@ const buildAssistantReply = (question: string): string => {
   }
 
   if (text.includes("school") || text.includes("management") || text.includes("admin")) {
-    return "SHANSCOTT SMS is built to simplify school administration by centralizing learners, staff, attendance, academic records, fees and reporting in one easy-to-use system.";
+    return "smartschool is built to simplify school administration by centralizing learners, staff, attendance, academic records, fees and reporting in one easy-to-use system.";
   }
 
   if (text.includes("how") || text.includes("why") || text.includes("benefit") || text.includes("advantages")) {
-    return "SHANSCOTT SMS reduces paperwork, improves communication, gives better visibility into school performance, and helps staff focus more on teaching and learner support.";
+    return "smartschool reduces paperwork, improves communication, gives better visibility into school performance, and helps staff focus more on teaching and learner support.";
   }
 
   return fallbackReply;
@@ -248,9 +248,9 @@ async function askShanscottAssistant(question: string): Promise<string> {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "SHANSCOTT SMS | School Management System" },
-      { name: "description", content: "SHANSCOTT School Management System helps schools manage learners, teachers, attendance, assessments, fees, timetables, reports and communication in one platform." },
-      { property: "og:title", content: "SHANSCOTT SMS | School Management System" },
+      { title: "smartschool | School Management" },
+      { name: "description", content: "smartschool helps schools manage learners, teachers, attendance, assessments, fees, timetables, reports and communication in one platform." },
+      { property: "og:title", content: "smartschool | School Management" },
       { property: "og:description", content: "Manage learners, teachers, attendance, assessments, fees, timetables, reports and communication in one platform." },
       { property: "og:type", content: "website" },
       { property: "og:image", content: "/landing/1.jpeg" },
@@ -270,7 +270,7 @@ function Landing() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [conversation, setConversation] = useState<Array<{ id: string; role: "assistant" | "user"; text: string }>>([
-    { id: "assistant-intro", role: "assistant", text: "Hi! I can help with SHANSCOTT SMS features, school workflows, teacher and parent access, attendance, fees, assessments and support options." },
+    { id: "assistant-intro", role: "assistant", text: "Hi! I can help with smartschool features, school workflows, teacher and parent access, attendance, fees, assessments and support options." },
   ]);
 
   useEffect(() => {
@@ -306,7 +306,7 @@ function Landing() {
       <header className={`sticky top-0 z-40 border-b transition-all duration-300 ${scrolled ? "border-sky-200/70 bg-white/80 backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/80" : "border-transparent bg-white/80 backdrop-blur dark:border-slate-700 dark:bg-slate-950/75"}`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5" onClick={closeMenu}>
-            <img src="/shanscot-logo.png" alt="SHANSCOTT SMS" className="h-11 w-44 object-contain object-left" />
+            <img src="/shanscot-logo.png" alt="smartschool" className="h-11 w-44 object-contain object-left" />
           </Link>
 
           <nav className="hidden items-center gap-7 text-sm font-semibold text-slate-600 lg:flex dark:text-slate-300" aria-label="Main navigation">
@@ -581,7 +581,7 @@ function Landing() {
                       <span className="h-2.5 w-2.5 rounded-full bg-[#C98A4B]" />
                       <span className="h-2.5 w-2.5 rounded-full bg-[#163429]" />
                     </div>
-                    <img src={showcaseDetails[activeShowcase].image} alt={`${activeShowcase} view of SHANSCOTT SMS`} className="h-[420px] w-full rounded-[0.8rem] object-cover object-top" />
+                    <img src={showcaseDetails[activeShowcase].image} alt={`${activeShowcase} view of smartschool`} className="h-[420px] w-full rounded-[0.8rem] object-cover object-top" />
                   </div>
                 </div>
               </div>
@@ -594,7 +594,7 @@ function Landing() {
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#C98A4B]">Security / reliability</p>
               <h2 className="mt-4 text-5xl leading-[0.96] text-[#F6F2E9]">Built for secure school management</h2>
-              <p className="mt-5 text-lg leading-8 text-[#F6F2E9]/80">SHANSCOTT SMS gives school teams the structure, permissions and clarity they need to operate confidently every day.</p>
+              <p className="mt-5 text-lg leading-8 text-[#F6F2E9]/80">smartschool gives school teams the structure, permissions and clarity they need to operate confidently every day.</p>
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
                 {reliabilityItems.map((item) => (
                   <div key={item} className="flex items-center gap-3 rounded-2xl border border-[#F6F2E9]/10 bg-[#F6F2E9]/5 p-4">
@@ -632,7 +632,7 @@ function Landing() {
               <div className="max-w-2xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#C98A4B]">Ready to grow</p>
                 <h2 className="mt-4 text-5xl leading-[0.96] text-[#F6F2E9]">Ready to manage your school better?</h2>
-                <p className="mt-4 text-base leading-8 text-[#F6F2E9]/80">Talk to the SHANSCOTT team and learn how the School Management System can fit your school's workflow.</p>
+                <p className="mt-4 text-base leading-8 text-[#F6F2E9]/80">Talk to the SHANSCOTT team and learn how smartschool can fit your school's workflow.</p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <a href="tel:+254718757621" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F6F2E9] px-5 py-3.5 text-sm font-bold text-[#163429]"><PhoneCall className="size-4" />Contact SHANSCOTT</a>
@@ -646,7 +646,7 @@ function Landing() {
       <footer className="bg-[#163429] px-4 pb-10 pt-16 text-[#F6F2E9] sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-12 pb-10 md:grid-cols-2 lg:grid-cols-4">
           <div>
-            <img src="/shanscot-logo.png" alt="SHANSCOTT SMS" className="h-12 w-52 object-contain object-left" />
+            <img src="/shanscot-logo.png" alt="smartschool" className="h-12 w-52 object-contain object-left" />
             <p className="mt-5 max-w-xs text-sm leading-7 text-[#F6F2E9]/75">Smart school management for modern schools.</p>
           </div>
 

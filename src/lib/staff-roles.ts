@@ -5,6 +5,7 @@ export const STAFF_ACCOUNT_ROLES: readonly { value: AppRole; label: string; isTe
   { value: "class_teacher", label: "Class teacher", isTeaching: true },
   { value: "exam_officer", label: "Exam officer", isTeaching: false },
   { value: "accountant", label: "Accountant", isTeaching: false },
+  { value: "support_staff", label: "Support staff", isTeaching: false },
   { value: "security", label: "Security / gate staff", isTeaching: false },
 ];
 

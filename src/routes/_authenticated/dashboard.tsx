@@ -630,6 +630,15 @@ function SchoolDashboardPage() {
             "border border-accent-light/60 bg-accent-light text-accent dark:border-accent-dark/40 dark:bg-accent dark:text-accent-light",
         },
         {
+          label: "All staff",
+          value: (data?.staff ?? []).length,
+          icon: Users,
+          hint: "Total staff records",
+          borderClass: "border-l-4 border-l-sky-500",
+          badgeClass:
+            "border border-sky-200/60 bg-sky-50 text-sky-600 dark:border-sky-800/40 dark:bg-sky-950/60 dark:text-sky-400",
+        },
+        {
           label: "Fees collection",
           value: formatMoney(currentTermPayments),
           icon: WalletCards,

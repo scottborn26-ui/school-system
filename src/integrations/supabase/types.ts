@@ -743,6 +743,12 @@ export type Database = {
         Update: { id?: string; school_id?: string; account_code?: string; account_name?: string; account_type?: string; parent_account_id?: string | null; normal_balance?: string; is_active?: boolean; created_at?: string; updated_at?: string };
         Relationships: [{ foreignKeyName: "chart_of_accounts_school_id_fkey"; columns: ["school_id"]; isOneToOne: false; referencedRelation: "schools"; referencedColumns: ["id"] }, { foreignKeyName: "chart_of_accounts_parent_account_id_fkey"; columns: ["parent_account_id"]; isOneToOne: false; referencedRelation: "chart_of_accounts"; referencedColumns: ["id"] }];
       };
+      cash_reconciliations: {
+        Row: { id: string; school_id: string; account_id: string; statement_date: string; statement_balance: number; notes: string | null; reconciled_by: string | null; created_at: string };
+        Insert: { id?: string; school_id: string; account_id: string; statement_date: string; statement_balance: number; notes?: string | null; reconciled_by?: string | null; created_at?: string };
+        Update: { id?: string; school_id?: string; account_id?: string; statement_date?: string; statement_balance?: number; notes?: string | null; reconciled_by?: string | null; created_at?: string };
+        Relationships: [{ foreignKeyName: "cash_reconciliations_school_id_fkey"; columns: ["school_id"]; isOneToOne: false; referencedRelation: "schools"; referencedColumns: ["id"] }, { foreignKeyName: "cash_reconciliations_account_id_fkey"; columns: ["account_id"]; isOneToOne: false; referencedRelation: "chart_of_accounts"; referencedColumns: ["id"] }];
+      };
       journal_entries: {
         Row: { id: string; school_id: string; entry_number: string; entry_date: string; term_id: string | null; academic_year_id: string | null; source: string; source_reference_id: string | null; narration: string; status: string; created_by: string | null; posted_by: string | null; posted_at: string | null; reversed_by_entry_id: string | null; created_at: string; updated_at: string };
         Insert: { id?: string; school_id: string; entry_number: string; entry_date?: string; term_id?: string | null; academic_year_id?: string | null; source?: string; source_reference_id?: string | null; narration: string; status?: string; created_by?: string | null; posted_by?: string | null; posted_at?: string | null; reversed_by_entry_id?: string | null; created_at?: string; updated_at?: string };

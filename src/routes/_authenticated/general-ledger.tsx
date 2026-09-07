@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -12,6 +13,7 @@ import {
   Scale,
   Sparkles,
   Trash2,
+  Wallet,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -87,6 +89,10 @@ export function GeneralLedgerPage() {
     type: "expense",
     normal: "debit",
   });
+  const [reconciliationOpen, setReconciliationOpen] = useState(false);
+  const [statementDate, setStatementDate] = useState(new Date().toISOString().slice(0, 10));
+  const [statementBalance, setStatementBalance] = useState("");
+  const [reconciliationNotes, setReconciliationNotes] = useState("");
   const accounts = useQuery({
     queryKey: ["chart-of-accounts", schoolId],
     queryFn: async () => {
@@ -107,6 +113,19 @@ export function GeneralLedgerPage() {
         .select("*, journal_entry_lines(*)")
         .eq("school_id", schoolId)
         .order("entry_date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+  const reconciliations = useQuery({
+    queryKey: ["cash-reconciliations", schoolId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cash_reconciliations")
+        .select("*")
+        .eq("school_id", schoolId)
+        .order("statement_date", { ascending: false })
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -235,6 +254,31 @@ export function GeneralLedgerPage() {
     },
     onError: (e: Error) => toast.error("Could not reverse entry", { description: e.message }),
   });
+  const reconcileCash = useMutation({
+    mutationFn: async () => {
+      const account = (accounts.data ?? []).find((item) => item.account_code === "1100");
+      const balance = Number(statementBalance);
+      if (!account) throw new Error("Seed the chart of accounts first.");
+      if (!statementDate || !Number.isFinite(balance)) throw new Error("Enter a valid statement date and balance.");
+      const { error } = await supabase.from("cash_reconciliations").insert({
+        school_id: schoolId,
+        account_id: account.id,
+        statement_date: statementDate,
+        statement_balance: balance,
+        notes: reconciliationNotes.trim() || null,
+        reconciled_by: school.userId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Cash position reconciled.");
+      setReconciliationOpen(false);
+      setStatementBalance("");
+      setReconciliationNotes("");
+      void qc.invalidateQueries({ queryKey: ["cash-reconciliations", schoolId] });
+    },
+    onError: (e: Error) => toast.error("Could not save reconciliation", { description: e.message }),
+  });
   const debitTotal = lines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
   const creditTotal = lines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
   const balanced = debitTotal > 0 && Math.abs(debitTotal - creditTotal) < 0.005;
@@ -252,6 +296,12 @@ export function GeneralLedgerPage() {
         .reduce((sum, line) => sum + Number(line.credit_amount), 0),
     }))
     .filter((account) => account.debit || account.credit);
+  const cashAccount = trial.find((account) => account.account_code === "1100");
+  const cashBookBalance = (cashAccount?.debit ?? 0) - (cashAccount?.credit ?? 0);
+  const latestReconciliation = reconciliations.data?.[0];
+  const reconciliationDifference = latestReconciliation
+    ? Number(latestReconciliation.statement_balance) - cashBookBalance
+    : null;
 
   return (
     <div className="space-y-6 pb-10">
@@ -313,6 +363,34 @@ export function GeneralLedgerPage() {
           </CardContent>
         </Card>
       </div>
+      <Card>
+        <CardHeader className="flex flex-col gap-3 border-b sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base"><Wallet className="size-4" /> Cash position</CardTitle>
+            <p className="text-sm text-muted-foreground">Posted Cash and bank activity compared with the latest bank or cash statement.</p>
+          </div>
+          <Dialog open={reconciliationOpen} onOpenChange={setReconciliationOpen}>
+            <DialogTrigger asChild><Button><CheckCircle2 className="mr-2 size-4" /> Reconcile balance</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Reconcile Cash and bank</DialogTitle>
+                <DialogDescription>Enter the ending balance from the bank or cash statement. The difference will remain visible until the books and statement agree.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Field label="Statement date"><Input type="date" value={statementDate} onChange={(e) => setStatementDate(e.target.value)} /></Field>
+                <Field label="Statement ending balance"><Input type="number" min={0} step="0.01" value={statementBalance} onChange={(e) => setStatementBalance(e.target.value)} /></Field>
+                <Field label="Notes"><Textarea value={reconciliationNotes} onChange={(e) => setReconciliationNotes(e.target.value)} rows={3} placeholder="Optional outstanding deposits, withdrawals, or bank charges" /></Field>
+              </div>
+              <DialogFooter><Button onClick={() => reconcileCash.mutate()} disabled={reconcileCash.isPending}>Save reconciliation</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent className="grid gap-4 p-5 sm:grid-cols-3">
+          <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Book balance</p><p className="text-2xl font-bold">{formatKES(cashBookBalance)}</p><p className="text-xs text-muted-foreground">Posted account 1100</p></div>
+          <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Latest statement</p><p className="text-2xl font-bold">{latestReconciliation ? formatKES(Number(latestReconciliation.statement_balance)) : "Not recorded"}</p><p className="text-xs text-muted-foreground">{latestReconciliation ? formatDate(latestReconciliation.statement_date) : "Enter a statement balance to reconcile"}</p></div>
+          <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Difference</p><p className={`text-2xl font-bold ${reconciliationDifference === null ? "text-muted-foreground" : Math.abs(reconciliationDifference) < 0.005 ? "text-emerald-600" : "text-amber-600"}`}>{reconciliationDifference === null ? "-" : formatKES(reconciliationDifference)}</p><p className="text-xs text-muted-foreground">{reconciliationDifference === null ? "No reconciliation yet" : Math.abs(reconciliationDifference) < 0.005 ? "Reconciled" : "Investigate variance"}</p></div>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader className="flex flex-col gap-3 border-b bg-muted/20 sm:flex-row sm:items-center sm:justify-between">
           <div>

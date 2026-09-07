@@ -1292,7 +1292,7 @@ function StaffDialog({
           nationalId: form.national_id,
           gender: form.gender,
           jobTitle: form.job_title,
-          role: form.role as "teacher" | "class_teacher" | "exam_officer" | "accountant" | "security",
+          role: form.role as "teacher" | "class_teacher" | "exam_officer" | "accountant" | "support_staff" | "security",
           employmentType: form.employment_type,
           phone: form.phone ? normalizeKePhone(form.phone) : "",
           employmentDate: form.employment_date,

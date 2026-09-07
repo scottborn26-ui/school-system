@@ -77,6 +77,7 @@ const NAV_GROUPS: NavGroup[] = [
     paths: [
       "/attendance",
       "/attendance-analytics",
+      "/my-attendance",
       "/staff-attendance",
       "/marks",
       "/assessment-approvals",
@@ -129,6 +130,7 @@ const NAV: NavItem[] = [
       "deputy",
       "teacher",
       "class_teacher",
+      "support_staff",
       "parent",
       "student",
       "super_admin",
@@ -208,6 +210,12 @@ const NAV: NavItem[] = [
     label: "Daily staff attendance",
     icon: faClipboardCheck,
     roles: ["admin", "principal", "deputy", "security"],
+  },
+  {
+    to: "/my-attendance",
+    label: "My attendance",
+    icon: faClipboardCheck,
+    roles: ["admin", "accountant", "exam_officer", "teacher", "class_teacher", "support_staff", "principal", "deputy", "security"],
   },
   { to: "/security", label: "Security dashboard", icon: faShieldHalved, roles: ["security"] },
   { to: "/security/today", label: "Today summary", icon: faClipboardCheck, roles: ["security"] },
@@ -341,7 +349,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     .filter(
       (item) =>
         school.activeRole === "security"
-          ? ["/security", "/security/today", "/security/history", "/security/reports", "/staff-attendance"].includes(item.to)
+          ? ["/security", "/security/today", "/security/history", "/security/reports", "/staff-attendance", "/my-attendance"].includes(item.to)
           : school.activeRole !== "exam_officer" ||
         [
           "/dashboard",

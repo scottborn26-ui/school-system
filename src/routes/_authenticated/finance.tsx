@@ -105,12 +105,26 @@ export function FinancePage({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("learners")
-        .select("id, admission_number, first_name, last_name, current_grade")
+        .select("id, admission_number, first_name, last_name, current_grade, current_stream_id")
         .eq("school_id", schoolId)
         .eq("is_archived", false)
         .order("last_name");
       if (error) throw error;
       return data;
+    },
+  });
+
+  const streams = useQuery({
+    queryKey: ["finance-streams", schoolId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("streams")
+        .select("id, name, grade")
+        .eq("school_id", schoolId)
+        .order("grade")
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -579,6 +593,8 @@ export function FinancePage({
   // ---------- payment
   const [payOpen, setPayOpen] = useState(false);
   const [payLearner, setPayLearner] = useState("");
+  const [payGrade, setPayGrade] = useState("all");
+  const [payStream, setPayStream] = useState("all");
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState<string>("mpesa");
   const [payRef, setPayRef] = useState("");
@@ -591,6 +607,15 @@ export function FinancePage({
     method: string;
     ref: string;
   } | null>(null);
+
+  const paymentStreams = (streams.data ?? []).filter(
+    (stream) => payGrade === "all" || stream.grade === payGrade,
+  );
+  const paymentLearners = (learners.data ?? []).filter(
+    (learner) =>
+      (payGrade === "all" || learner.current_grade === payGrade) &&
+      (payStream === "all" || learner.current_stream_id === payStream),
+  );
 
   const deletePayment = useMutation({
     mutationFn: async (paymentId: string) => {
@@ -1239,8 +1264,58 @@ export function FinancePage({
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Record payment</DialogTitle>
+                      <DialogDescription>
+                        Filter learners by grade or stream before selecting who made the payment.
+                      </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label>Grade filter</Label>
+                          <Select
+                            value={payGrade}
+                            onValueChange={(value) => {
+                              setPayGrade(value);
+                              setPayStream("all");
+                              setPayLearner("");
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="All grades" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All grades</SelectItem>
+                              {school.grades.map((grade) => (
+                                <SelectItem key={grade} value={grade}>
+                                  {GRADE_LABELS[grade]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Stream filter</Label>
+                          <Select
+                            value={payStream}
+                            onValueChange={(value) => {
+                              setPayStream(value);
+                              setPayLearner("");
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="All streams" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All streams</SelectItem>
+                              {paymentStreams.map((stream) => (
+                                <SelectItem key={stream.id} value={stream.id}>
+                                  {stream.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                       <div className="space-y-1.5">
                         <Label>Learner</Label>
                         <Select value={payLearner} onValueChange={setPayLearner}>
@@ -1248,13 +1323,16 @@ export function FinancePage({
                             <SelectValue placeholder="Select learner" />
                           </SelectTrigger>
                           <SelectContent>
-                            {(learners.data ?? []).map((l) => (
+                            {paymentLearners.map((l) => (
                               <SelectItem key={l.id} value={l.id}>
                                 {l.first_name} {l.last_name} · {l.admission_number}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                        <p className="text-xs text-muted-foreground">
+                          {paymentLearners.length} learner{paymentLearners.length === 1 ? "" : "s"} available
+                        </p>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-1.5">

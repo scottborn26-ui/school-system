@@ -32,6 +32,7 @@ import { Route as AuthenticatedFinanceFeeStructureRouteImport } from './routes/_
 import { Route as AuthenticatedFinanceGeneralLedgerRouteImport } from './routes/_authenticated/finance-general-ledger'
 import { Route as AuthenticatedFinanceInventoryRouteImport } from './routes/_authenticated/finance-inventory'
 import { Route as AuthenticatedFinanceInvoicesRouteImport } from './routes/_authenticated/finance-invoices'
+import { Route as AuthenticatedFinancePaymentSettingsRouteImport } from './routes/_authenticated/finance-payment-settings'
 import { Route as AuthenticatedFinancePaymentsRouteImport } from './routes/_authenticated/finance-payments'
 import { Route as AuthenticatedFinanceStatementsRouteImport } from './routes/_authenticated/finance-statements'
 import { Route as AuthenticatedGeneralLedgerRouteImport } from './routes/_authenticated/general-ledger'
@@ -194,6 +195,12 @@ const AuthenticatedFinanceInvoicesRoute =
   AuthenticatedFinanceInvoicesRouteImport.update({
     id: '/finance-invoices',
     path: '/finance-invoices',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinancePaymentSettingsRoute =
+  AuthenticatedFinancePaymentSettingsRouteImport.update({
+    id: '/finance-payment-settings',
+    path: '/finance-payment-settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedFinancePaymentsRoute =
@@ -428,6 +435,7 @@ export interface FileRoutesByFullPath {
   '/finance-general-ledger': typeof AuthenticatedFinanceGeneralLedgerRoute
   '/finance-inventory': typeof AuthenticatedFinanceInventoryRoute
   '/finance-invoices': typeof AuthenticatedFinanceInvoicesRoute
+  '/finance-payment-settings': typeof AuthenticatedFinancePaymentSettingsRoute
   '/finance-payments': typeof AuthenticatedFinancePaymentsRoute
   '/finance-statements': typeof AuthenticatedFinanceStatementsRoute
   '/general-ledger': typeof AuthenticatedGeneralLedgerRoute
@@ -490,6 +498,7 @@ export interface FileRoutesByTo {
   '/finance-general-ledger': typeof AuthenticatedFinanceGeneralLedgerRoute
   '/finance-inventory': typeof AuthenticatedFinanceInventoryRoute
   '/finance-invoices': typeof AuthenticatedFinanceInvoicesRoute
+  '/finance-payment-settings': typeof AuthenticatedFinancePaymentSettingsRoute
   '/finance-payments': typeof AuthenticatedFinancePaymentsRoute
   '/finance-statements': typeof AuthenticatedFinanceStatementsRoute
   '/general-ledger': typeof AuthenticatedGeneralLedgerRoute
@@ -553,6 +562,7 @@ export interface FileRoutesById {
   '/_authenticated/finance-general-ledger': typeof AuthenticatedFinanceGeneralLedgerRoute
   '/_authenticated/finance-inventory': typeof AuthenticatedFinanceInventoryRoute
   '/_authenticated/finance-invoices': typeof AuthenticatedFinanceInvoicesRoute
+  '/_authenticated/finance-payment-settings': typeof AuthenticatedFinancePaymentSettingsRoute
   '/_authenticated/finance-payments': typeof AuthenticatedFinancePaymentsRoute
   '/_authenticated/finance-statements': typeof AuthenticatedFinanceStatementsRoute
   '/_authenticated/general-ledger': typeof AuthenticatedGeneralLedgerRoute
@@ -617,6 +627,7 @@ export interface FileRouteTypes {
     | '/finance-general-ledger'
     | '/finance-inventory'
     | '/finance-invoices'
+    | '/finance-payment-settings'
     | '/finance-payments'
     | '/finance-statements'
     | '/general-ledger'
@@ -679,6 +690,7 @@ export interface FileRouteTypes {
     | '/finance-general-ledger'
     | '/finance-inventory'
     | '/finance-invoices'
+    | '/finance-payment-settings'
     | '/finance-payments'
     | '/finance-statements'
     | '/general-ledger'
@@ -741,6 +753,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance-general-ledger'
     | '/_authenticated/finance-inventory'
     | '/_authenticated/finance-invoices'
+    | '/_authenticated/finance-payment-settings'
     | '/_authenticated/finance-payments'
     | '/_authenticated/finance-statements'
     | '/_authenticated/general-ledger'
@@ -950,6 +963,13 @@ declare module '@tanstack/react-router' {
       path: '/finance-invoices'
       fullPath: '/finance-invoices'
       preLoaderRoute: typeof AuthenticatedFinanceInvoicesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance-payment-settings': {
+      id: '/_authenticated/finance-payment-settings'
+      path: '/finance-payment-settings'
+      fullPath: '/finance-payment-settings'
+      preLoaderRoute: typeof AuthenticatedFinancePaymentSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/finance-payments': {
@@ -1305,6 +1325,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFinanceGeneralLedgerRoute: typeof AuthenticatedFinanceGeneralLedgerRoute
   AuthenticatedFinanceInventoryRoute: typeof AuthenticatedFinanceInventoryRoute
   AuthenticatedFinanceInvoicesRoute: typeof AuthenticatedFinanceInvoicesRoute
+  AuthenticatedFinancePaymentSettingsRoute: typeof AuthenticatedFinancePaymentSettingsRoute
   AuthenticatedFinancePaymentsRoute: typeof AuthenticatedFinancePaymentsRoute
   AuthenticatedFinanceStatementsRoute: typeof AuthenticatedFinanceStatementsRoute
   AuthenticatedGeneralLedgerRoute: typeof AuthenticatedGeneralLedgerRoute
@@ -1357,6 +1378,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedFinanceGeneralLedgerRoute,
   AuthenticatedFinanceInventoryRoute: AuthenticatedFinanceInventoryRoute,
   AuthenticatedFinanceInvoicesRoute: AuthenticatedFinanceInvoicesRoute,
+  AuthenticatedFinancePaymentSettingsRoute:
+    AuthenticatedFinancePaymentSettingsRoute,
   AuthenticatedFinancePaymentsRoute: AuthenticatedFinancePaymentsRoute,
   AuthenticatedFinanceStatementsRoute: AuthenticatedFinanceStatementsRoute,
   AuthenticatedGeneralLedgerRoute: AuthenticatedGeneralLedgerRoute,

@@ -329,6 +329,55 @@ export type Database = {
           },
         ];
       };
+      sms_message_logs: {
+        Row: {
+          batch_id: string;
+          created_at: string;
+          error_message: string | null;
+          guardian_id: string;
+          id: string;
+          message: string;
+          provider: string;
+          provider_response: Json | null;
+          provider_status: number | null;
+          recipient_phone: string;
+          school_id: string;
+          sender_id: string;
+          status: string;
+        };
+        Insert: {
+          batch_id: string;
+          created_at?: string;
+          error_message?: string | null;
+          guardian_id: string;
+          id?: string;
+          message: string;
+          provider?: string;
+          provider_response?: Json | null;
+          provider_status?: number | null;
+          recipient_phone: string;
+          school_id: string;
+          sender_id: string;
+          status: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["sms_message_logs"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "sms_message_logs_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sms_message_logs_guardian_id_fkey";
+            columns: ["guardian_id"];
+            isOneToOne: false;
+            referencedRelation: "guardians";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       departments: {
         Row: {
           created_at: string;

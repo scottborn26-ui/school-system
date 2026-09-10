@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Eye, Mail, Phone, Search, Trash2, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit3, Eye, Mail, Phone, Search, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/app-shell";
 import { RequireSchool } from "@/components/require-school";
@@ -17,7 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
 import { useSchool } from "@/hooks/use-school";
@@ -52,6 +52,8 @@ function ParentsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selectedParent, setSelectedParent] = useState<Guardian | null>(null);
+  const [parentToEdit, setParentToEdit] = useState<Guardian | null>(null);
+  const [editForm, setEditForm] = useState({ full_name: "", relationship: "", phone: "", email: "", address: "" });
   const [parentToDelete, setParentToDelete] = useState<Guardian | null>(null);
   const parentsQuery = useQuery({
     queryKey: ["parents", school.schoolId],
@@ -96,6 +98,39 @@ function ParentsPage() {
       setParentToDelete(null);
     },
   });
+
+  const updateParent = useMutation({
+    mutationFn: async () => {
+      if (!parentToEdit) return;
+      const { error } = await supabase
+        .from("guardians")
+        .update({
+          full_name: editForm.full_name.trim(),
+          relationship: editForm.relationship.trim() || null,
+          phone: editForm.phone.trim() || null,
+          email: editForm.email.trim() || null,
+          address: editForm.address.trim() || null,
+        })
+        .eq("id", parentToEdit.id)
+        .eq("school_id", school.schoolId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["parents", school.schoolId] });
+      setParentToEdit(null);
+    },
+  });
+
+  const openEditParent = (parent: Guardian) => {
+    setParentToEdit(parent);
+    setEditForm({
+      full_name: parent.full_name,
+      relationship: parent.relationship ?? "",
+      phone: parent.phone ?? "",
+      email: parent.email ?? "",
+      address: parent.address ?? "",
+    });
+  };
 
   const parents = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -177,6 +212,9 @@ function ParentsPage() {
                           <Button variant="ghost" size="icon" aria-label={`View ${parent.full_name}`} onClick={() => setSelectedParent(parent)}>
                             <Eye className="size-4" />
                           </Button>
+                          <Button variant="ghost" size="icon" aria-label={`Edit ${parent.full_name}`} onClick={() => openEditParent(parent)}>
+                            <Edit3 className="size-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" aria-label={`Delete ${parent.full_name}`} className="text-destructive hover:text-destructive" onClick={() => setParentToDelete(parent)}>
                             <Trash2 className="size-4" />
                           </Button>
@@ -214,6 +252,44 @@ function ParentsPage() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={Boolean(parentToEdit)} onOpenChange={(open) => !open && setParentToEdit(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit parent</DialogTitle>
+            <DialogDescription>Update this parent or guardian&apos;s contact details.</DialogDescription>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); updateParent.mutate(); }}>
+            <div className="grid gap-2">
+              <label htmlFor="parent-full-name" className="text-sm font-medium">Full name</label>
+              <Input id="parent-full-name" value={editForm.full_name} onChange={(event) => setEditForm({ ...editForm, full_name: event.target.value })} required />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <label htmlFor="parent-relationship" className="text-sm font-medium">Relationship</label>
+                <Input id="parent-relationship" value={editForm.relationship} onChange={(event) => setEditForm({ ...editForm, relationship: event.target.value })} placeholder="e.g. Mother" />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="parent-phone" className="text-sm font-medium">Phone</label>
+                <Input id="parent-phone" value={editForm.phone} onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })} />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="parent-email" className="text-sm font-medium">Email</label>
+              <Input id="parent-email" type="email" value={editForm.email} onChange={(event) => setEditForm({ ...editForm, email: event.target.value })} />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="parent-address" className="text-sm font-medium">Address</label>
+              <Input id="parent-address" value={editForm.address} onChange={(event) => setEditForm({ ...editForm, address: event.target.value })} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setParentToEdit(null)}>Cancel</Button>
+              <Button type="submit" disabled={updateParent.isPending || !editForm.full_name.trim()}>
+                {updateParent.isPending ? "Saving..." : "Save changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <Dialog open={Boolean(selectedParent)} onOpenChange={(open) => !open && setSelectedParent(null)}>
         <DialogContent>
           <DialogHeader>

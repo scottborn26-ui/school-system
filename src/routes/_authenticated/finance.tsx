@@ -6,6 +6,8 @@ import {
   ArrowUpFromLine,
   BookOpen,
   Boxes,
+  ChevronLeft,
+  ChevronRight,
   Coins,
   Download,
   Eye,
@@ -87,6 +89,50 @@ export const Route = createFileRoute("/_authenticated/finance")({
 });
 
 const METHODS = ["mpesa", "bank", "cash", "cheque", "bursary", "waiver"] as const;
+const FEE_TABLE_PAGE_SIZE = 10;
+
+function FeeTablePagination({
+  page,
+  total,
+  onPageChange,
+}: {
+  page: number;
+  total: number;
+  onPageChange: (page: number) => void;
+}) {
+  const pageCount = Math.max(1, Math.ceil(total / FEE_TABLE_PAGE_SIZE));
+  if (total <= FEE_TABLE_PAGE_SIZE) return null;
+
+  return (
+    <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+      <span>
+        Showing {Math.min((page - 1) * FEE_TABLE_PAGE_SIZE + 1, total)}-
+        {Math.min(page * FEE_TABLE_PAGE_SIZE, total)} of {total}
+      </span>
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={page === 1}
+          onClick={() => onPageChange(page - 1)}
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        <span className="min-w-16 text-center">Page {page} of {pageCount}</span>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={page === pageCount}
+          onClick={() => onPageChange(page + 1)}
+          aria-label="Next page"
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function FinancePage({
   initialTab = "invoices",
@@ -99,6 +145,9 @@ export function FinancePage({
   const qc = useQueryClient();
   const schoolId = school.schoolId!;
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [gradePage, setGradePage] = useState(1);
+  const [streamPage, setStreamPage] = useState(1);
+  const [overpaidPage, setOverpaidPage] = useState(1);
 
   const learners = useQuery({
     queryKey: ["learners-lite", schoolId],
@@ -237,6 +286,114 @@ export function FinancePage({
       .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
     return { billed, received, outstanding: billed - received };
   })();
+
+  type FeeBreakdown = {
+    key: string;
+    label: string;
+    learners: number;
+    billed: number;
+    received: number;
+    outstanding: number;
+    overpayment: number;
+  };
+
+  const feeBreakdown = (() => {
+    const learnerTotals = new Map<string, { billed: number; received: number }>();
+    for (const invoice of invoices.data ?? []) {
+      if (invoice.status === "void") continue;
+      const current = learnerTotals.get(invoice.learner_id) ?? { billed: 0, received: 0 };
+      current.billed += Number(invoice.total || 0);
+      learnerTotals.set(invoice.learner_id, current);
+    }
+    for (const payment of payments.data ?? []) {
+      if (payment.is_reversed) continue;
+      const current = learnerTotals.get(payment.learner_id) ?? { billed: 0, received: 0 };
+      current.received += Number(payment.amount || 0);
+      learnerTotals.set(payment.learner_id, current);
+    }
+
+    const byGrade = new Map<string, FeeBreakdown>();
+    const byStream = new Map<string, FeeBreakdown>();
+    for (const learner of learners.data ?? []) {
+      const current = learnerTotals.get(learner.id);
+      if (!current) continue;
+      const gradeKey = learner.current_grade ?? "unassigned";
+      const stream = (streams.data ?? []).find((item) => item.id === learner.current_stream_id);
+      const streamKey = learner.current_stream_id ?? "unassigned";
+      const gradeLabel = learner.current_grade
+        ? GRADE_LABELS[learner.current_grade as CbeGrade] ?? learner.current_grade
+        : "Grade not assigned";
+      const streamLabel = stream?.name ?? "Stream not assigned";
+      const add = (map: Map<string, FeeBreakdown>, key: string, label: string) => {
+        const row = map.get(key) ?? {
+          key,
+          label,
+          learners: 0,
+          billed: 0,
+          received: 0,
+          outstanding: 0,
+          overpayment: 0,
+        };
+        row.learners += 1;
+        row.billed += current.billed;
+        row.received += current.received;
+        row.outstanding += Math.max(0, current.billed - current.received);
+        row.overpayment += Math.max(0, current.received - current.billed);
+        map.set(key, row);
+      };
+      add(byGrade, gradeKey, gradeLabel);
+      add(byStream, streamKey, streamLabel);
+    }
+
+    const sortRows = (rows: FeeBreakdown[]) =>
+      rows.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
+
+    const overpaidLearners = (learners.data ?? [])
+      .map((learner) => {
+        const summary = learnerTotals.get(learner.id) ?? { billed: 0, received: 0 };
+        const overpayment = Math.max(0, summary.received - summary.billed);
+        if (overpayment <= 0) return null;
+        const stream = (streams.data ?? []).find((item) => item.id === learner.current_stream_id);
+        return {
+          id: learner.id,
+          name: `${learner.first_name} ${learner.last_name}`,
+          admission_number: learner.admission_number,
+          grade: learner.current_grade ? GRADE_LABELS[learner.current_grade as CbeGrade] ?? learner.current_grade : "Not assigned",
+          stream: stream?.name ?? "Not assigned",
+          billed: summary.billed,
+          received: summary.received,
+          overpayment,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null)
+      .sort((a, b) => b.overpayment - a.overpayment);
+
+    return {
+      byGrade: sortRows([...byGrade.values()]),
+      byStream: sortRows([...byStream.values()]),
+      overpaidLearners,
+      overpayment: overpaidLearners.reduce((sum, learner) => sum + learner.overpayment, 0),
+    };
+  })();
+
+  const gradePageCount = Math.max(1, Math.ceil(feeBreakdown.byGrade.length / FEE_TABLE_PAGE_SIZE));
+  const streamPageCount = Math.max(1, Math.ceil(feeBreakdown.byStream.length / FEE_TABLE_PAGE_SIZE));
+  const overpaidPageCount = Math.max(
+    1,
+    Math.ceil(feeBreakdown.overpaidLearners.length / FEE_TABLE_PAGE_SIZE),
+  );
+  const visibleGradeRows = feeBreakdown.byGrade.slice(
+    (Math.min(gradePage, gradePageCount) - 1) * FEE_TABLE_PAGE_SIZE,
+    Math.min(gradePage, gradePageCount) * FEE_TABLE_PAGE_SIZE,
+  );
+  const visibleStreamRows = feeBreakdown.byStream.slice(
+    (Math.min(streamPage, streamPageCount) - 1) * FEE_TABLE_PAGE_SIZE,
+    Math.min(streamPage, streamPageCount) * FEE_TABLE_PAGE_SIZE,
+  );
+  const visibleOverpaidLearners = feeBreakdown.overpaidLearners.slice(
+    (Math.min(overpaidPage, overpaidPageCount) - 1) * FEE_TABLE_PAGE_SIZE,
+    Math.min(overpaidPage, overpaidPageCount) * FEE_TABLE_PAGE_SIZE,
+  );
 
   // ---------- fee item
   const [fiOpen, setFiOpen] = useState(false);
@@ -990,6 +1147,122 @@ export function FinancePage({
           </Card>
         ))}
       </div>
+
+      <Card className="mb-6">
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+          <div>
+            <CardTitle>Fee collection breakdown</CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Billed and received amounts grouped by each learner&apos;s current placement.
+            </p>
+          </div>
+          <div className="shrink-0 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-right dark:border-amber-900/50 dark:bg-amber-950/20">
+            <p className="text-xs text-amber-700 dark:text-amber-400">Overpayment</p>
+            <p className="font-semibold text-amber-800 dark:text-amber-300">
+              {formatKES(feeBreakdown.overpayment)}
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-6 lg:grid-cols-2">
+          {[
+            { title: "Per grade", rows: feeBreakdown.byGrade },
+            { title: "Per stream", rows: feeBreakdown.byStream },
+          ].map(({ title, rows }) => (
+            <div key={title} className="min-w-0">
+              <h3 className="mb-2 text-sm font-semibold">{title}</h3>
+              <div className="overflow-x-auto rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{title.replace("Per ", "")}</TableHead>
+                      <TableHead className="text-right">Learners</TableHead>
+                      <TableHead className="text-right">Billed</TableHead>
+                      <TableHead className="text-right">Received</TableHead>
+                      <TableHead className="text-right">Overpaid</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
+                          No fee data yet.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      rows.map((row) => (
+                        <TableRow key={row.key}>
+                          <TableCell className="font-medium">{row.label}</TableCell>
+                          <TableCell className="text-right">{row.learners}</TableCell>
+                          <TableCell className="text-right">{formatKES(row.billed)}</TableCell>
+                          <TableCell className="text-right">{formatKES(row.received)}</TableCell>
+                          <TableCell className="text-right text-amber-700 dark:text-amber-400">
+                            {formatKES(row.overpayment)}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+          <div>
+            <CardTitle>Students with overpayments</CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
+              These learners have paid more than their billed fees and are ready for return.
+            </p>
+          </div>
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-right dark:border-emerald-900/60 dark:bg-emerald-950/20">
+            <p className="text-xs text-emerald-700 dark:text-emerald-400">Returnable</p>
+            <p className="font-semibold text-emerald-800 dark:text-emerald-300">
+              {formatKES(feeBreakdown.overpayment)}
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {feeBreakdown.overpaidLearners.length === 0 ? (
+            <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+              No learner has paid more than their billed fees.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Admission</TableHead>
+                    <TableHead>Grade</TableHead>
+                    <TableHead>Stream</TableHead>
+                    <TableHead className="text-right">Billed</TableHead>
+                    <TableHead className="text-right">Paid</TableHead>
+                    <TableHead className="text-right">Refund due</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {feeBreakdown.overpaidLearners.map((learner) => (
+                    <TableRow key={learner.id}>
+                      <TableCell className="font-medium">{learner.name}</TableCell>
+                      <TableCell>{learner.admission_number}</TableCell>
+                      <TableCell>{learner.grade}</TableCell>
+                      <TableCell>{learner.stream}</TableCell>
+                      <TableCell className="text-right">{formatKES(learner.billed)}</TableCell>
+                      <TableCell className="text-right">{formatKES(learner.received)}</TableCell>
+                      <TableCell className="text-right font-medium text-emerald-700 dark:text-emerald-400">
+                        {formatKES(learner.overpayment)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         {!standalone && <TabsList className="mb-4 flex-wrap">

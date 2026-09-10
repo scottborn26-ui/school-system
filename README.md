@@ -1,5 +1,17 @@
 # Shanscott EduFlow
 
+## Payment integrations
+
+Payment Settings uses Option B: each school connects its own M-Pesa or bank account. Apply
+`supabase/migrations/20260910090000_payment_integrations.sql` and set `PAYMENT_ENCRYPTION_KEY`
+to a long random server-only value before allowing administrators to save credentials.
+
+The settings dashboard stores encrypted credentials, masks them from browser queries, records
+configuration changes without secret values, and reconciles manual matches through the existing
+fee-payment ledger trigger. Provider-specific Daraja/bank API calls and public webhook delivery
+still require a deployed server webhook adapter with provider credentials and signature/rate-limit
+verification; the dashboard deliberately does not simulate live financial transactions.
+
 ## User Guide
 
 For the complete operating instructions, from creating the first account through onboarding, admissions, teaching, attendance, assessments, reports and finance, see the [SHANSCOTT CBE/CBC User Guide](./USER_GUIDE.md).
@@ -224,3 +236,5 @@ npm run dev
 Create a local `.env` file from `.env.example` before using staff account creation. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from the Supabase project settings, and set `SUPABASE_SERVICE_ROLE_KEY` from the server-side API keys section. The service-role key must remain server-only: do not prefix it with `VITE_`, commit it, or expose it in browser code. Restart the dev server after changing environment variables.
 
 Staff credential emails use Resend. Add `RESEND_API_KEY` from Resend and a verified sender in `RESEND_FROM_EMAIL`, for example `SHANSCOTT CBE <noreply@your-verified-domain.example>`. Set `APP_URL` to the public application URL used in the email. Until these values are configured, staff accounts are still created but their credential email is reported as failed.
+
+Parent SMS uses Sozuri. Set `SOZURI_API_KEY` and `SOZURI_PROJECT` on the server, and optionally set `SOZURI_FROM` (default: `SHANSCOTT TECHNOLOGIS`) and `SOZURI_MESSAGE_TYPE` (default: `promotional`). Keep the API key server-only; never prefix it with `VITE_` or place it in browser code. The Messages page sends one SMS to each selected parent's saved `phone` or `alt_phone` number.

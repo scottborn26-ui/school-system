@@ -90,7 +90,7 @@ const NAV_GROUPS: NavGroup[] = [
       "/admissions",
     ],
   },
-  { label: "People", paths: ["/learners", "/parents", "/staff"] },
+  { label: "People", paths: ["/learners", "/parents", "/staff", "/messages"] },
   {
     label: "Academics",
     paths: [
@@ -111,6 +111,7 @@ const NAV_GROUPS: NavGroup[] = [
     paths: [
       "/finance-invoices",
       "/finance-payments",
+      "/finance-payment-settings",
       "/finance-statements",
       "/finance-fee-structure",
       "/inventory",
@@ -149,6 +150,22 @@ const NAV: NavItem[] = [
     label: "Parents",
     icon: faUsers,
     roles: ["admin", "principal", "deputy"],
+  },
+  {
+    to: "/messages",
+    label: "Messages",
+    icon: faEnvelope,
+    roles: [
+      "admin",
+      "accountant",
+      "support_staff",
+      "principal",
+      "deputy",
+      "teacher",
+      "class_teacher",
+      "parent",
+      "student",
+    ],
   },
   {
     to: "/transition",
@@ -215,7 +232,17 @@ const NAV: NavItem[] = [
     to: "/my-attendance",
     label: "My attendance",
     icon: faClipboardCheck,
-    roles: ["admin", "accountant", "exam_officer", "teacher", "class_teacher", "support_staff", "principal", "deputy", "security"],
+    roles: [
+      "admin",
+      "accountant",
+      "exam_officer",
+      "teacher",
+      "class_teacher",
+      "support_staff",
+      "principal",
+      "deputy",
+      "security",
+    ],
   },
   { to: "/security", label: "Security dashboard", icon: faShieldHalved, roles: ["security"] },
   { to: "/security/today", label: "Today summary", icon: faClipboardCheck, roles: ["security"] },
@@ -294,6 +321,12 @@ const NAV: NavItem[] = [
     roles: ["accountant", "principal", "deputy"],
   },
   {
+    to: "/finance-payment-settings",
+    label: "Payment settings",
+    icon: faSliders,
+    roles: ["admin", "accountant", "principal", "deputy", "super_admin"],
+  },
+  {
     to: "/finance-statements",
     label: "Statements",
     icon: faFileLines,
@@ -330,7 +363,12 @@ const NAV: NavItem[] = [
     roles: ["principal", "deputy"],
   },
   { to: "/settings", label: "School Settings", icon: faSliders, roles: ["principal", "deputy"] },
-  { to: "/audit", label: "Audit Logs", icon: faShieldHalved, roles: ["exam_officer", "principal", "super_admin"] },
+  {
+    to: "/audit",
+    label: "Audit Logs",
+    icon: faShieldHalved,
+    roles: ["exam_officer", "principal", "super_admin"],
+  },
   { to: "/platform", label: "Platform Control", icon: faShieldHalved, roles: ["super_admin"] },
 ];
 
@@ -346,24 +384,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const visible = NAV.filter(
     (n) => school.roles.length === 0 || n.roles.some((r) => school.roles.includes(r)),
   )
-    .filter(
-      (item) =>
-        school.activeRole === "security"
-          ? ["/security", "/security/today", "/security/history", "/security/reports", "/staff-attendance", "/my-attendance"].includes(item.to)
-          : school.activeRole !== "exam_officer" ||
-        [
-          "/dashboard",
-          "/exam-timetable",
-          "/marks",
-          "/assessment-approvals",
-          "/assignments",
-          "/assessments",
-          "/reports",
-          "/report-management",
-          "/report-card-approvals",
-          "/student-positions",
-          "/performance-summary",
-        ].includes(item.to),
+    .filter((item) =>
+      school.activeRole === "security"
+        ? [
+            "/security",
+            "/security/today",
+            "/security/history",
+            "/security/reports",
+            "/staff-attendance",
+            "/my-attendance",
+          ].includes(item.to)
+        : school.activeRole !== "exam_officer" ||
+          [
+            "/dashboard",
+            "/exam-timetable",
+            "/marks",
+            "/assessment-approvals",
+            "/assignments",
+            "/assessments",
+            "/reports",
+            "/report-management",
+            "/report-card-approvals",
+            "/student-positions",
+            "/performance-summary",
+          ].includes(item.to),
     )
     .map((item) => {
       if (school.activeRole === "exam_officer") {
@@ -533,7 +577,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
 
-          <Link to="/dashboard" className="flex shrink-0 items-center gap-2" aria-label="School dashboard">
+          <Link
+            to="/dashboard"
+            className="flex shrink-0 items-center gap-2"
+            aria-label="School dashboard"
+          >
             <SchoolLogo
               logoUrl={school.school?.logo_url}
               schoolName={school.school?.name}

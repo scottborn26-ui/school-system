@@ -62,3 +62,5 @@
 \ir migrations/20260903170000_allow_admin_audit_log_delete.sql
 \ir migrations/20260903180000_repair_audit_log_delete_policy.sql
 \ir migrations/20260903190000_allow_school_admin_profile_updates.sql
+\ir migrations/20260910100000_parent_sms_message_logs.sql
+\ir migrations/20260910110000_repair_messages_insert_rls.sql

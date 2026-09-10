@@ -120,7 +120,17 @@ export function SchoolProvider({ children, user }: { children: ReactNode; user: 
         ]);
 
       const schoolId = memberships?.[0]?.school_id ?? null;
-      const staffRoles = ["admin", "accountant", "support_staff", "exam_officer", "teacher", "class_teacher", "security"];
+      const staffRoles = [
+        "admin",
+        "principal",
+        "deputy",
+        "accountant",
+        "support_staff",
+        "exam_officer",
+        "teacher",
+        "class_teacher",
+        "security",
+      ];
       const visibleRoleRows = staff
         ? (roleRows ?? []).filter((row) => staffRoles.includes(row.role))
         : (roleRows ?? []);

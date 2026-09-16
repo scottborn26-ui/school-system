@@ -342,14 +342,6 @@ function AuthPage() {
                           onClick={() => setSelectedRole("staff")}
                         />
                         <RoleChoice
-                          icon={ShieldCheck}
-                          title="Platform Super Admin"
-                          description="Login with root governance privileges to manage all school tenants and infrastructure."
-                          theme="emerald"
-                          selected={selectedRole === "super_admin"}
-                          onClick={() => setSelectedRole("super_admin")}
-                        />
-                        <RoleChoice
                           icon={UserRound}
                           title="Other Roles"
                           description="Login as parent or student to view information and updates."

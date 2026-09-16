@@ -1,13 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  Eye,
   Inbox,
   Mail,
   Paperclip,
   Plus,
   Search,
   Send,
+  Trash2,
   UserRound,
   Users,
   Smartphone,
@@ -36,11 +38,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { useSchool } from "@/hooks/use-school";
 import { supabase } from "@/lib/supabase";
 import { sendParentSms } from "@/lib/parent-sms.functions";
+import { buildParentNotice, renderParentTemplate } from "@/lib/parent-sms-template";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { ParentMessageComposer } from "@/components/parent-message-composer";
 
 type Contact = {
   id: string;
@@ -72,6 +84,17 @@ type ParentRecipient = {
       current_stream_id: string | null;
     } | null;
   }>;
+};
+
+type SmsLog = {
+  id: string;
+  guardian_id: string;
+  recipient_phone: string;
+  message: string;
+  status: string;
+  provider_status: number | null;
+  error_message: string | null;
+  created_at: string;
 };
 
 export function MessageCenter() {
@@ -297,7 +320,7 @@ export function MessageCenter() {
         }
       />
       {messageMode === "parents" && canMessageParents ? (
-        <ParentSmsPanel />
+        <ParentMessageComposer />
       ) : (
         <Card className="overflow-hidden">
           <CardContent className="grid min-h-[620px] p-0 md:grid-cols-[300px_1fr]">
@@ -594,6 +617,15 @@ function ParentSmsPanel() {
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [body, setBody] = useState("");
+  const [messageCategory, setMessageCategory] = useState<
+    "academic_report" | "fee_balance" | "general_update" | "attendance_alert"
+  >("general_update");
+  const [eventDate, setEventDate] = useState("");
+  const [eventVenue, setEventVenue] = useState("");
+  const [smsPage, setSmsPage] = useState(1);
+  const [viewedLog, setViewedLog] = useState<SmsLog | null>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
+  const smsPageSize = 10;
 
   const parents = useQuery({
     queryKey: ["parent-sms-recipients", school.schoolId],
@@ -626,18 +658,125 @@ function ParentSmsPanel() {
     },
   });
   const smsLogs = useQuery({
-    queryKey: ["parent-sms-logs", school.schoolId],
+    queryKey: ["parent-sms-logs", school.schoolId, smsPage],
     enabled: Boolean(school.schoolId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sms_message_logs")
-        .select("id, recipient_phone, message, status, provider_status, error_message, created_at")
+        .select("id, guardian_id, recipient_phone, message, status, provider_status, error_message, created_at")
         .eq("school_id", school.schoolId!)
         .order("created_at", { ascending: false })
-        .limit(10);
+        .range((smsPage - 1) * smsPageSize, smsPage * smsPageSize - 1);
       if (error) throw error;
-      return data ?? [];
+      const { count, error: countError } = await supabase
+        .from("sms_message_logs")
+        .select("id", { count: "exact", head: true })
+        .eq("school_id", school.schoolId!);
+      if (countError) throw countError;
+      return { rows: (data ?? []) as SmsLog[], count: count ?? 0 };
     },
+  });
+  const parentMessagePreview = useQuery({
+    queryKey: ["parent-message-preview", school.schoolId, selectedIds[0], messageCategory],
+    enabled: Boolean(
+      school.schoolId &&
+        selectedIds[0] &&
+        (messageCategory === "fee_balance" || messageCategory === "academic_report"),
+    ),
+    queryFn: async () => {
+      const db = supabase as unknown as { from: (table: string) => any };
+      const parent = (parents.data ?? []).find((item) => item.id === selectedIds[0]);
+      const learnerId = parent?.learner_guardians.find((link) => link.learners)?.learners?.id;
+      if (!parent || !learnerId) return null;
+      const [schoolResult, settingsResult, templateResult, learnerResult] = await Promise.all([
+        db.from("schools").select("name, phone, email").eq("id", school.schoolId!).maybeSingle(),
+        db.from("message_settings").select("school_display_name, school_phone, school_email, footer_note").eq("school_id", school.schoolId!).maybeSingle(),
+        db.from("message_templates").select("body_template").eq("school_id", school.schoolId!).eq("category", messageCategory).eq("is_active", true).in("channel", ["sms", "both"]).limit(1),
+        db.from("learners").select("id, first_name, middle_name, last_name, admission_number, current_grade, current_stream_id").eq("school_id", school.schoolId!).eq("id", learnerId).maybeSingle(),
+      ]);
+      if (schoolResult.error) throw schoolResult.error;
+      if (learnerResult.error) throw learnerResult.error;
+      if (!learnerResult.data) return null;
+      const learner = learnerResult.data;
+      const [streamResult, reportResult, invoiceResult, paymentResult] = await Promise.all([
+        learner.current_stream_id
+          ? db.from("streams").select("name").eq("school_id", school.schoolId!).eq("id", learner.current_stream_id).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        messageCategory === "academic_report"
+          ? db.from("report_cards").select("total_points, mean_percentage, class_position, class_size, payload").eq("school_id", school.schoolId!).eq("learner_id", learnerId).eq("status", "published").order("updated_at", { ascending: false }).limit(1)
+          : Promise.resolve({ data: [], error: null }),
+        messageCategory === "fee_balance"
+          ? db.from("invoices").select("total, due_date").eq("school_id", school.schoolId!).eq("learner_id", learnerId).eq("status", "issued")
+          : Promise.resolve({ data: [], error: null }),
+        messageCategory === "fee_balance"
+          ? db.from("payments").select("amount").eq("school_id", school.schoolId!).eq("learner_id", learnerId).eq("is_reversed", false)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (reportResult.error || invoiceResult.error || paymentResult.error) {
+        throw reportResult.error ?? invoiceResult.error ?? paymentResult.error;
+      }
+      const report = reportResult.data?.[0] ?? null;
+      const totalFees = (invoiceResult.data ?? []).reduce((sum: number, row: { total: number }) => sum + Number(row.total ?? 0), 0);
+      const amountPaid = (paymentResult.data ?? []).reduce((sum: number, row: { amount: number }) => sum + Number(row.amount ?? 0), 0);
+      const payload = (report?.payload ?? {}) as { term?: string; year?: string; areas?: Array<{ learning_area?: string; percentage?: number; points?: number | null }> };
+      const subjectBreakdown = (payload.areas ?? []).map((area) => `${area.learning_area ?? "Subject"}: ${area.percentage ?? area.points ?? "-"}`).join(", ");
+      const schoolData = schoolResult.data ?? {};
+      const settings = settingsResult.data ?? {};
+      const feeStatement = `Fee balance for ${[learner.first_name, learner.middle_name, learner.last_name].filter(Boolean).join(" ")}: ${totalFees - amountPaid} outstanding of ${totalFees}. Paid: ${amountPaid}. Due: ${invoiceResult.data?.[0]?.due_date ?? "N/A"}.`;
+      const template = messageCategory === "fee_balance"
+        ? "{{fee_statement}}"
+        : templateResult.data?.[0]?.body_template || "Academic report for {{student_name}}. Mean: {{mean_grade}}. Position: {{class_position}}/{{class_total_students}}.";
+      const message = renderParentTemplate(template, {
+        student_name: [learner.first_name, learner.middle_name, learner.last_name].filter(Boolean).join(" "),
+        admission_no: learner.admission_number,
+        class_stream: [learner.current_grade, streamResult.data?.name].filter(Boolean).join(" "),
+        fee_balance: totalFees - amountPaid,
+        fee_statement: feeStatement,
+        total_fees: totalFees,
+        amount_paid: amountPaid,
+        due_date: invoiceResult.data?.[0]?.due_date ?? "N/A",
+        mean_grade: report?.mean_percentage == null ? "N/A" : `${report.mean_percentage}%`,
+        class_position: report?.class_position ?? "N/A",
+        class_total_students: report?.class_size ?? "N/A",
+        total_points: report?.total_points ?? "N/A",
+        subject_breakdown: subjectBreakdown,
+        term: payload.term ?? "current term",
+        year: payload.year ?? new Date().getFullYear(),
+      }, "No message data is available for this learner.");
+      return buildParentNotice({
+        schoolName: settings.school_display_name || schoolData.name || school.school?.name || "School",
+        parentName: parent.full_name,
+        studentName: [learner.first_name, learner.middle_name, learner.last_name].filter(Boolean).join(" "),
+        admissionNumber: learner.admission_number,
+        classStream: [learner.current_grade, streamResult.data?.name].filter(Boolean).join(" ") || "N/A",
+        schoolPhone: settings.school_phone || schoolData.phone || "N/A",
+        schoolEmail: settings.school_email || schoolData.email || "N/A",
+        messageBody: message,
+        footerNote: settings.footer_note || undefined,
+      });
+    },
+  });
+  useEffect(() => {
+    if (parentMessagePreview.data) setBody(parentMessagePreview.data);
+  }, [parentMessagePreview.data]);
+  const totalSmsPages = Math.max(1, Math.ceil((smsLogs.data?.count ?? 0) / smsPageSize));
+  const deleteSms = useMutation({
+    mutationFn: async (logId: string) => {
+      const { error } = await supabase
+        .from("sms_message_logs")
+        .delete()
+        .eq("id", logId)
+        .eq("school_id", school.schoolId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("SMS log deleted.");
+      if (smsLogs.data?.rows.length === 1 && smsPage > 1) {
+        setSmsPage((page) => page - 1);
+      }
+      void smsLogs.refetch();
+    },
+    onError: (error: Error) => toast.error("SMS log could not be deleted.", { description: error.message }),
   });
   const streamOptions = (streams.data ?? []).filter(
     (item) => grade === "all" || item.grade === grade,
@@ -661,13 +800,22 @@ function ParentSmsPanel() {
       if (!selectedIds.length) throw new Error("Select at least one parent.");
       if (!body.trim()) throw new Error("Enter a message.");
       await sendParentSms({
-        data: { schoolId: school.schoolId!, guardianIds: selectedIds, message: body.trim() },
+        data: {
+          schoolId: school.schoolId!,
+          guardianIds: selectedIds,
+          category: messageCategory,
+          eventDate: eventDate.trim() || undefined,
+          eventVenue: eventVenue.trim() || undefined,
+          message: body.trim(),
+        },
       });
     },
     onSuccess: () => {
       toast.success("Parent SMS request sent.");
       setSelectedIds([]);
       setBody("");
+      setEventDate("");
+      setEventVenue("");
       void smsLogs.refetch();
     },
     onError: (error: Error) =>
@@ -682,6 +830,13 @@ function ParentSmsPanel() {
     );
   }
 
+  function startNewMessage(log: SmsLog) {
+    setSelectedIds([log.guardian_id]);
+    setBody("");
+    messageInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    messageInputRef.current?.focus();
+  }
+
   return (
     <Card>
       <CardContent className="space-y-5 pt-6">
@@ -693,6 +848,22 @@ function ParentSmsPanel() {
             Select parents by grade or stream, then send directly to their saved phone number.
           </p>
         </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <Select value={messageCategory} onValueChange={(value) => setMessageCategory(value as typeof messageCategory)}>
+            <SelectTrigger><SelectValue placeholder="Message category" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="general_update">General update / event</SelectItem>
+              <SelectItem value="academic_report">Academic report</SelectItem>
+              <SelectItem value="fee_balance">Fee balance</SelectItem>
+              <SelectItem value="attendance_alert">Attendance alert</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input value={eventDate} onChange={(event) => setEventDate(event.target.value)} placeholder="Event/date (optional)" />
+          <Input value={eventVenue} onChange={(event) => setEventVenue(event.target.value)} placeholder="Venue (optional)" />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Reports and fee balances are filled from the selected learner records. For general updates, write the message below.
+        </p>
         <div className="grid gap-3 md:grid-cols-[1fr_1fr_1.5fr]">
           <Select
             value={grade}
@@ -785,6 +956,7 @@ function ParentSmsPanel() {
           )}
         </div>
         <Textarea
+          ref={messageInputRef}
           value={body}
           onChange={(event) => setBody(event.target.value)}
           placeholder="Write the SMS message..."
@@ -803,32 +975,82 @@ function ParentSmsPanel() {
           </Button>
         </div>
         <div className="space-y-2 border-t pt-5">
-          <h3 className="text-sm font-semibold">Recent SMS logs</h3>
-          <div className="divide-y rounded-lg border">
-            {(smsLogs.data ?? []).map((log) => (
-              <div key={log.id} className="flex items-start justify-between gap-3 p-3 text-sm">
-                <div className="min-w-0">
-                  <p className="font-medium">{log.recipient_phone}</p>
-                  <p className="truncate text-xs text-muted-foreground">{log.message}</p>
-                  {log.error_message && (
-                    <p className="mt-1 text-xs text-destructive">{log.error_message}</p>
-                  )}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold">Recent SMS logs</h3>
+              <p className="text-xs text-muted-foreground">{smsLogs.data?.count ?? 0} total messages</p>
+            </div>
+          </div>
+          <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
+            <div className="divide-y">
+              {(smsLogs.data?.rows ?? []).map((log) => (
+                <div key={log.id} className="flex flex-col gap-3 p-4 text-sm transition-colors hover:bg-muted/20 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold tracking-tight">{log.recipient_phone}</p>
+                      <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider", log.status === "sent" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")}>
+                        {log.status}
+                      </span>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{log.message}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1 border-t pt-2 sm:border-0 sm:pt-0">
+                    <Button size="sm" variant="ghost" onClick={() => setViewedLog(log)}>
+                      <Eye className="mr-1.5 size-4" /> View
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => startNewMessage(log)}>
+                      <Send className="mr-1.5 size-4" /> Send
+                    </Button>
+                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => deleteSms.mutate(log.id)} disabled={deleteSms.isPending} aria-label="Delete SMS log">
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="shrink-0 text-right text-xs text-muted-foreground">
-                  <p className={log.status === "sent" ? "text-emerald-600" : "text-destructive"}>
-                    {log.status}
-                  </p>
-                  <p>{log.provider_status ?? "No response"}</p>
-                  <p>{new Date(log.created_at).toLocaleString()}</p>
-                </div>
-              </div>
-            ))}
-            {!smsLogs.data?.length && (
+              ))}
+            </div>
+            {!smsLogs.data?.rows.length && (
               <p className="p-4 text-center text-xs text-muted-foreground">No SMS logs yet.</p>
             )}
           </div>
+          {totalSmsPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious href="#" aria-disabled={smsPage === 1} className={smsPage === 1 ? "pointer-events-none opacity-50" : ""} onClick={(event) => { event.preventDefault(); setSmsPage((page) => Math.max(1, page - 1)); }} />
+                </PaginationItem>
+                {Array.from({ length: totalSmsPages }, (_, index) => index + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink href="#" isActive={page === smsPage} onClick={(event) => { event.preventDefault(); setSmsPage(page); }}>
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext href="#" aria-disabled={smsPage === totalSmsPages} className={smsPage === totalSmsPages ? "pointer-events-none opacity-50" : ""} onClick={(event) => { event.preventDefault(); setSmsPage((page) => Math.min(totalSmsPages, page + 1)); }} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       </CardContent>
+      <Dialog open={Boolean(viewedLog)} onOpenChange={(open) => !open && setViewedLog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>SMS details</DialogTitle>
+            <DialogDescription>{viewedLog?.recipient_phone}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 rounded-lg border bg-muted/20 p-4 text-sm">
+            <p className="whitespace-pre-wrap leading-6">{viewedLog?.message}</p>
+            <div className="grid grid-cols-2 gap-3 border-t pt-3 text-xs text-muted-foreground">
+              <span>Status: {viewedLog?.status}</span>
+              <span>Provider code: {viewedLog?.provider_status ?? "No response"}</span>
+              <span className="col-span-2">Sent: {viewedLog && new Date(viewedLog.created_at).toLocaleString()}</span>
+            </div>
+            {viewedLog?.error_message && <p className="text-xs text-destructive">{viewedLog.error_message}</p>}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

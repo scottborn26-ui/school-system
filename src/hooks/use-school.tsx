@@ -26,7 +26,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   security: "Security / Gate Staff",
   exam_officer: "Exam Officer",
   principal: "Headteacher / Principal",
-  deputy: "Deputy Headteacher",
+  deputy: "Deputy Principal / Deputy Headteacher",
   teacher: "Subject Teacher",
   class_teacher: "Class Teacher",
   parent: "Parent / Guardian",
@@ -74,6 +74,7 @@ export interface SchoolRow {
 const Ctx = createContext<SchoolContextValue | null>(null);
 
 const ROLE_STORAGE_KEY = "shanscott.activeRole";
+export const IMPERSONATED_SCHOOL_KEY = "shanscott.superAdminSchoolId";
 
 export function SchoolProvider({ children, user }: { children: ReactNode; user: User }) {
   const [activeRoleState, setActiveRoleState] = useState<AppRole | null>(() => {
@@ -119,7 +120,6 @@ export function SchoolProvider({ children, user }: { children: ReactNode; user: 
             .maybeSingle(),
         ]);
 
-      const schoolId = memberships?.[0]?.school_id ?? null;
       const staffRoles = [
         "admin",
         "principal",
@@ -134,6 +134,14 @@ export function SchoolProvider({ children, user }: { children: ReactNode; user: 
       const visibleRoleRows = staff
         ? (roleRows ?? []).filter((row) => staffRoles.includes(row.role))
         : (roleRows ?? []);
+      const isSuperAdmin = (roleRows ?? []).some(
+        (row) => row.role === "super_admin" && row.is_active,
+      );
+      const impersonatedSchoolId =
+        isSuperAdmin && typeof window !== "undefined"
+          ? window.localStorage.getItem(IMPERSONATED_SCHOOL_KEY)
+          : null;
+      const schoolId = impersonatedSchoolId ?? memberships?.[0]?.school_id ?? null;
       let school: SchoolRow | null = null;
       let grades: CbeGrade[] = [];
       let years: SchoolContextValue["years"] = [];

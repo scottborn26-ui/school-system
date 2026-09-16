@@ -13,9 +13,9 @@ const CreateStaffInput = z.object({
   nationalId: z.string().max(50, "National ID is too long").optional(),
   gender: z.string().max(20, "Gender value is too long").optional(),
   jobTitle: z.string().max(100, "Job title is too long").optional(),
-  role: z.enum(["teacher", "class_teacher", "exam_officer", "accountant", "support_staff", "security"], {
+  role: z.enum(["principal", "deputy", "teacher", "class_teacher", "exam_officer", "accountant", "support_staff", "security"], {
     errorMap: () => ({
-      message: "Role must be one of: teacher, class_teacher, exam_officer, accountant, support_staff, or security",
+      message: "Role must be one of: principal, deputy, teacher, class_teacher, exam_officer, accountant, support_staff, or security",
     }),
   }),
   employmentType: z.string().max(50, "Employment type is too long").optional(),
@@ -78,7 +78,7 @@ export const createStaffWithAccount = createServerFn({ method: "POST" })
     }
 
     if (!adminRole) {
-      throw new Error("Only a school administrator, principal, or deputy can create staff accounts.");
+      throw new Error("Only a school administrator, headteacher, or deputy principal can create staff accounts.");
     }
 
     // Step 2: Import Supabase Admin client

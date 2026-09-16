@@ -73,7 +73,7 @@ function SelectRolePage() {
       ? (window.localStorage.getItem("shanscott.activeRole") as AppRole | null)
       : null;
   const landingPath = (role: AppRole) =>
-    role === "super_admin" ? "/platform" : role === "security" ? "/staff-attendance" : "/dashboard";
+    role === "super_admin" ? "/super-admin" : role === "security" ? "/staff-attendance" : "/dashboard";
 
   useEffect(() => {
     if (school.loading) return;

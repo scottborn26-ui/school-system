@@ -1,6 +1,7 @@
 import type { AppRole } from "@/hooks/use-school";
 
 export const STAFF_ACCOUNT_ROLES: readonly { value: AppRole; label: string; isTeaching: boolean }[] = [
+  { value: "deputy", label: "Deputy Principal / Deputy Headteacher", isTeaching: false },
   { value: "teacher", label: "Teacher", isTeaching: true },
   { value: "class_teacher", label: "Class teacher", isTeaching: true },
   { value: "exam_officer", label: "Exam officer", isTeaching: false },

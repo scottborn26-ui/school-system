@@ -50,11 +50,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/lib/supabase";
-import { ROLE_LABELS, useSchool, type AppRole } from "@/hooks/use-school";
+import { IMPERSONATED_SCHOOL_KEY, ROLE_LABELS, useSchool, type AppRole } from "@/hooks/use-school";
 import { ALLOWED_CURRICULUM_ROLES } from "@/lib/access-control";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/notification-bell";
+import { MaintenanceBanner } from "@/components/maintenance-banner";
 import { useCommunicationCounts } from "@/lib/communication";
 
 interface NavItem {
@@ -112,6 +113,7 @@ const NAV_GROUPS: NavGroup[] = [
       "/finance-invoices",
       "/finance-payments",
       "/finance-payment-settings",
+      "/sms-credits",
       "/finance-statements",
       "/finance-fee-structure",
       "/inventory",
@@ -327,6 +329,12 @@ const NAV: NavItem[] = [
     roles: ["admin", "accountant", "principal", "deputy", "super_admin"],
   },
   {
+    to: "/sms-credits",
+    label: "SMS credits",
+    icon: faEnvelope,
+    roles: ["admin", "accountant", "principal", "deputy", "super_admin"],
+  },
+  {
     to: "/finance-statements",
     label: "Statements",
     icon: faFileLines,
@@ -369,7 +377,7 @@ const NAV: NavItem[] = [
     icon: faShieldHalved,
     roles: ["exam_officer", "principal", "super_admin"],
   },
-  { to: "/platform", label: "Platform Control", icon: faShieldHalved, roles: ["super_admin"] },
+  { to: "/super-admin", label: "Platform Control", icon: faShieldHalved, roles: ["super_admin"] },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -615,6 +623,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="ml-auto flex items-center gap-2">
+            {school.can("super_admin") &&
+              typeof window !== "undefined" &&
+              window.localStorage.getItem(IMPERSONATED_SCHOOL_KEY) && (
+                <Button asChild variant="outline" size="sm">
+                  <Link
+                    to="/super-admin/schools"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      window.localStorage.removeItem(IMPERSONATED_SCHOOL_KEY);
+                      window.location.assign("/super-admin/schools");
+                    }}
+                  >
+                    Exit school
+                  </Link>
+                </Button>
+              )}
             {school.years.length > 0 && (
               <Select value={school.academicYearId ?? ""} onValueChange={school.setAcademicYearId}>
                 <SelectTrigger className="w-[130px]" aria-label="Academic year">
@@ -725,6 +749,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
+        <MaintenanceBanner />
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>

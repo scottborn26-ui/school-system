@@ -342,6 +342,14 @@ function AuthPage() {
                           onClick={() => setSelectedRole("staff")}
                         />
                         <RoleChoice
+                          icon={ShieldCheck}
+                          title="Platform Super Admin"
+                          description="Login with root governance privileges to manage all school tenants and infrastructure."
+                          theme="emerald"
+                          selected={selectedRole === "super_admin"}
+                          onClick={() => setSelectedRole("super_admin")}
+                        />
+                        <RoleChoice
                           icon={UserRound}
                           title="Other Roles"
                           description="Login as parent or student to view information and updates."
@@ -367,6 +375,19 @@ function AuthPage() {
                                 ? "Super Admin"
                                 : "Staff"}
                         </div>
+                        {selectedRole === "super_admin" ? (
+                          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2.5 text-xs text-emerald-800 dark:text-emerald-300 font-medium flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                              <span className="font-semibold">Platform Super Administrator Mode</span>
+                            </div>
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                          </div>
+                        ) : (
+                          <div className="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-sm font-medium">
+                            Signing in as {selectedRole === "principal" ? "Headteacher / Principal" : "Staff"}
+                          </div>
+                        )}
                         <Field id="email" label="Email address" error={fieldErrors.email}>
                           <Input
                             id="email"
@@ -375,6 +396,7 @@ function AuthPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="you@school.ac.ke"
+                            placeholder={selectedRole === "super_admin" ? "admin@shanscott.com" : "you@school.ac.ke"}
                           />
                         </Field>
                         <Field id="password" label="Password" error={fieldErrors.password}>
@@ -555,6 +577,7 @@ function RoleChoice({
   title: string;
   description: string;
   theme: "blue" | "green" | "purple";
+  theme: "blue" | "green" | "purple" | "emerald";
   selected: boolean;
   onClick: () => void;
 }) {

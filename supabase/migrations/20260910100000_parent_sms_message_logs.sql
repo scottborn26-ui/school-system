@@ -18,6 +18,7 @@ CREATE INDEX sms_message_logs_school_idx ON public.sms_message_logs (school_id, 
 CREATE INDEX sms_message_logs_batch_idx ON public.sms_message_logs (batch_id);
 
 GRANT SELECT, INSERT ON public.sms_message_logs TO authenticated;
+GRANT DELETE ON public.sms_message_logs TO authenticated;
 GRANT ALL ON public.sms_message_logs TO service_role;
 
 ALTER TABLE public.sms_message_logs ENABLE ROW LEVEL SECURITY;
@@ -29,3 +30,7 @@ CREATE POLICY sms_message_logs_member_read ON public.sms_message_logs
 CREATE POLICY sms_message_logs_member_insert ON public.sms_message_logs
   FOR INSERT TO authenticated
   WITH CHECK (public.is_super_admin() OR public.is_school_member(school_id));
+
+CREATE POLICY sms_message_logs_member_delete ON public.sms_message_logs
+  FOR DELETE TO authenticated
+  USING (public.is_super_admin() OR public.is_school_member(school_id));

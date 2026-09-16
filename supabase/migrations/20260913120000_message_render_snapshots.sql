@@ -1,0 +1,1 @@
+ALTER TABLE public.message_logs ADD COLUMN IF NOT EXISTS data_snapshot jsonb NOT NULL DEFAULT '{}'::jsonb;

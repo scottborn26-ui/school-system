@@ -892,5 +892,3 @@ function DashboardMockup() {
     </div>
   );
 }
-
-export default Landing;

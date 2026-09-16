@@ -1292,7 +1292,7 @@ function StaffDialog({
           nationalId: form.national_id,
           gender: form.gender,
           jobTitle: form.job_title,
-          role: form.role as "teacher" | "class_teacher" | "exam_officer" | "accountant" | "support_staff" | "security",
+          role: form.role as "principal" | "deputy" | "teacher" | "class_teacher" | "exam_officer" | "accountant" | "support_staff" | "security",
           employmentType: form.employment_type,
           phone: form.phone ? normalizeKePhone(form.phone) : "",
           employmentDate: form.employment_date,
@@ -1334,9 +1334,9 @@ function StaffDialog({
       if (error.message.includes("already exists for")) {
         title = "Email address already in use";
         description = error.message;
-      } else if (error.message.includes("principal or deputy")) {
+      } else if (error.message.includes("school administrator") || error.message.includes("principal")) {
         title = "Permission denied";
-        description = "Only school principals or deputy principals can create staff accounts.";
+        description = "Only school administrators, headteachers, or deputy principals can create staff accounts.";
       } else if (error.message.includes("valid email")) {
         title = "Invalid email address";
         description = error.message;

@@ -64,3 +64,13 @@
 \ir migrations/20260903190000_allow_school_admin_profile_updates.sql
 \ir migrations/20260910100000_parent_sms_message_logs.sql
 \ir migrations/20260910110000_repair_messages_insert_rls.sql
+\ir migrations/20260904100000_platform_subscription_oversight.sql
+\ir migrations/20260904110000_super_admin_core_module.sql
+\ir migrations/20260911120000_super_admin_data_access_repair.sql
+\ir migrations/20260911130000_platform_service_health.sql
+\ir migrations/20260913100000_parent_communication_templates.sql
+\ir migrations/20260913110000_repair_parent_message_templates.sql
+\ir migrations/20260913123000_school_sms_settings.sql
+\ir migrations/20260913140000_sms_credit_balances.sql
+\ir migrations/20260913141000_sms_payment_details.sql
+\ir migrations/20260914100000_payment_receipt_sms.sql

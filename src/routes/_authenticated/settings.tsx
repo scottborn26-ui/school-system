@@ -145,6 +145,7 @@ function SettingsPage() {
             <TabsTrigger value="grades">Grades Offered</TabsTrigger>
             <TabsTrigger value="calendar">Academic Calendar</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="messaging">Messaging</TabsTrigger>
             <TabsTrigger value="staff-attendance">Staff Attendance</TabsTrigger>
           </TabsList>
 
@@ -187,6 +188,10 @@ function SettingsPage() {
               settings={data?.settings}
               onSaved={() => void qc.invalidateQueries({ queryKey: ["school-settings", schoolId] })}
             />
+          </TabsContent>
+
+          <TabsContent value="messaging" className="mt-4">
+            <MessagingSettingsTab schoolId={schoolId} />
           </TabsContent>
 
           <TabsContent value="staff-attendance" className="mt-4">
@@ -1362,6 +1367,63 @@ function ReportsTab({
             </>
           )}
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MessagingSettingsTab({ schoolId }: { schoolId: string }) {
+  const qc = useQueryClient();
+  const db = supabase as unknown as { from: (table: string) => any };
+  const settingsQuery = useQuery({
+    queryKey: ["message-settings", schoolId],
+    queryFn: async () => {
+      const [{ data: settings }, { data: templates }] = await Promise.all([
+        db.from("message_settings").select("*").eq("school_id", schoolId).maybeSingle(),
+        db.from("message_templates").select("id, category, body_template, is_active").eq("school_id", schoolId).order("category"),
+      ]);
+      return { settings, templates: templates ?? [] };
+    },
+  });
+  const [form, setForm] = useState({ school_display_name: "", school_phone: "", school_email: "", footer_note: "" });
+  const [templates, setTemplates] = useState<Array<{ id: string; category: string; body_template: string; is_active: boolean }>>([]);
+  useEffect(() => {
+    const settings = settingsQuery.data?.settings;
+    if (settings) setForm({ school_display_name: settings.school_display_name ?? "", school_phone: settings.school_phone ?? "", school_email: settings.school_email ?? "", footer_note: settings.footer_note ?? "" });
+    if (settingsQuery.data?.templates) setTemplates(settingsQuery.data.templates);
+  }, [settingsQuery.data]);
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await db.from("message_settings").upsert({ school_id: schoolId, ...form }, { onConflict: "school_id" });
+      if (error) throw error;
+      for (const template of templates) {
+        const result = await db.from("message_templates").update({ body_template: template.body_template, is_active: template.is_active }).eq("id", template.id).eq("school_id", schoolId);
+        if (result.error) throw result.error;
+      }
+    },
+    onSuccess: () => { toast.success("Messaging settings saved."); void qc.invalidateQueries({ queryKey: ["message-settings", schoolId] }); },
+    onError: (error: Error) => toast.error("Messaging settings could not be saved.", { description: error.message }),
+  });
+  return (
+    <Card className="card-accent-operations">
+      <CardHeader><CardTitle>Parent communication</CardTitle><CardDescription>Configure the notice envelope and reusable SMS templates for reports, fees, events, and attendance.</CardDescription></CardHeader>
+      <CardContent className="space-y-5">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Display name"><Input value={form.school_display_name} onChange={(e) => setForm({ ...form, school_display_name: e.target.value })} /></Field>
+          <Field label="School phone"><Input value={form.school_phone} onChange={(e) => setForm({ ...form, school_phone: e.target.value })} /></Field>
+          <Field label="School email"><Input value={form.school_email} onChange={(e) => setForm({ ...form, school_email: e.target.value })} /></Field>
+          <Field label="Footer note"><Input value={form.footer_note} onChange={(e) => setForm({ ...form, footer_note: e.target.value })} /></Field>
+        </div>
+        <div className="space-y-4">
+          {templates.map((template, index) => (
+            <div key={template.id} className="space-y-2 rounded-lg border p-4">
+              <div className="flex items-center justify-between gap-3"><Label className="capitalize">{template.category.replaceAll("_", " ")}</Label><label className="flex items-center gap-2 text-xs"><Checkbox checked={template.is_active} onCheckedChange={(checked) => setTemplates((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, is_active: checked === true } : item))} /> Active</label></div>
+              <Textarea rows={3} value={template.body_template} onChange={(e) => setTemplates((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, body_template: e.target.value } : item))} />
+              <p className="text-xs text-muted-foreground">Use placeholders such as {'{{student_name}}'}, {'{{fee_balance}}'}, {'{{event_date}}'}, and {'{{message_body}}'}.</p>
+            </div>
+          ))}
+        </div>
+        <Button onClick={() => save.mutate()} disabled={save.isPending}><Save className="mr-2 size-4" />Save messaging settings</Button>
       </CardContent>
     </Card>
   );

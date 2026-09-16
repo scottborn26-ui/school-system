@@ -57,6 +57,7 @@ import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSecurityRouteImport } from './routes/_authenticated/security'
 import { Route as AuthenticatedSelectRoleRouteImport } from './routes/_authenticated/select-role'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedSmsCreditsRouteImport } from './routes/_authenticated/sms-credits'
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
 import { Route as AuthenticatedStaffAttendanceRouteImport } from './routes/_authenticated/staff-attendance'
 import { Route as AuthenticatedStudentPositionsRouteImport } from './routes/_authenticated/student-positions'
@@ -68,7 +69,20 @@ import { Route as AuthenticatedSecurityHistoryRouteImport } from './routes/_auth
 import { Route as AuthenticatedSecurityReportsRouteImport } from './routes/_authenticated/security.reports'
 import { Route as AuthenticatedSecurityTodayRouteImport } from './routes/_authenticated/security.today'
 import { Route as AuthenticatedSuperAdminIndexRouteImport } from './routes/_authenticated/super-admin/index'
+import { Route as AuthenticatedSuperAdminAcademicsRouteImport } from './routes/_authenticated/super-admin/academics'
+import { Route as AuthenticatedSuperAdminAdminsRouteImport } from './routes/_authenticated/super-admin/admins'
+import { Route as AuthenticatedSuperAdminAnalyticsRouteImport } from './routes/_authenticated/super-admin/analytics'
+import { Route as AuthenticatedSuperAdminAnnouncementsRouteImport } from './routes/_authenticated/super-admin/announcements'
+import { Route as AuthenticatedSuperAdminAuditLogRouteImport } from './routes/_authenticated/super-admin/audit-log'
+import { Route as AuthenticatedSuperAdminBillingRouteImport } from './routes/_authenticated/super-admin/billing'
+import { Route as AuthenticatedSuperAdminDataRouteImport } from './routes/_authenticated/super-admin/data'
+import { Route as AuthenticatedSuperAdminIntegrationsRouteImport } from './routes/_authenticated/super-admin/integrations'
 import { Route as AuthenticatedSuperAdminSchoolsRouteImport } from './routes/_authenticated/super-admin/schools'
+import { Route as AuthenticatedSuperAdminSettingsRouteImport } from './routes/_authenticated/super-admin/settings'
+import { Route as AuthenticatedSuperAdminSmsCreditsRouteImport } from './routes/_authenticated/super-admin/sms-credits'
+import { Route as AuthenticatedSuperAdminSupportRouteImport } from './routes/_authenticated/super-admin/support'
+import { Route as AuthenticatedSuperAdminSystemRouteImport } from './routes/_authenticated/super-admin/system'
+import { Route as AuthenticatedSuperAdminUsersRouteImport } from './routes/_authenticated/super-admin/users'
 import { Route as AuthenticatedSuperAdminSchoolsSchoolIdRouteImport } from './routes/_authenticated/super-admin/schools/$schoolId'
 import { Route as AuthenticatedSuperAdminSchoolsNewRouteImport } from './routes/_authenticated/super-admin/schools/new'
 
@@ -331,6 +345,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSmsCreditsRoute = AuthenticatedSmsCreditsRouteImport.update({
+  id: '/sms-credits',
+  path: '/sms-credits',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedStaffRoute = AuthenticatedStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
@@ -393,10 +412,88 @@ const AuthenticatedSuperAdminIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSuperAdminRoute,
   } as any)
+const AuthenticatedSuperAdminAcademicsRoute =
+  AuthenticatedSuperAdminAcademicsRouteImport.update({
+    id: '/academics',
+    path: '/academics',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminAdminsRoute =
+  AuthenticatedSuperAdminAdminsRouteImport.update({
+    id: '/admins',
+    path: '/admins',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminAnalyticsRoute =
+  AuthenticatedSuperAdminAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminAnnouncementsRoute =
+  AuthenticatedSuperAdminAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminAuditLogRoute =
+  AuthenticatedSuperAdminAuditLogRouteImport.update({
+    id: '/audit-log',
+    path: '/audit-log',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminBillingRoute =
+  AuthenticatedSuperAdminBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminDataRoute =
+  AuthenticatedSuperAdminDataRouteImport.update({
+    id: '/data',
+    path: '/data',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminIntegrationsRoute =
+  AuthenticatedSuperAdminIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
 const AuthenticatedSuperAdminSchoolsRoute =
   AuthenticatedSuperAdminSchoolsRouteImport.update({
     id: '/schools',
     path: '/schools',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminSettingsRoute =
+  AuthenticatedSuperAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminSmsCreditsRoute =
+  AuthenticatedSuperAdminSmsCreditsRouteImport.update({
+    id: '/sms-credits',
+    path: '/sms-credits',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminSupportRoute =
+  AuthenticatedSuperAdminSupportRouteImport.update({
+    id: '/support',
+    path: '/support',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminSystemRoute =
+  AuthenticatedSuperAdminSystemRouteImport.update({
+    id: '/system',
+    path: '/system',
+    getParentRoute: () => AuthenticatedSuperAdminRoute,
+  } as any)
+const AuthenticatedSuperAdminUsersRoute =
+  AuthenticatedSuperAdminUsersRouteImport.update({
+    id: '/users',
+    path: '/users',
     getParentRoute: () => AuthenticatedSuperAdminRoute,
   } as any)
 const AuthenticatedSuperAdminSchoolsSchoolIdRoute =
@@ -460,6 +557,7 @@ export interface FileRoutesByFullPath {
   '/security': typeof AuthenticatedSecurityRouteWithChildren
   '/select-role': typeof AuthenticatedSelectRoleRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/sms-credits': typeof AuthenticatedSmsCreditsRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/staff-attendance': typeof AuthenticatedStaffAttendanceRoute
   '/student-positions': typeof AuthenticatedStudentPositionsRoute
@@ -470,7 +568,20 @@ export interface FileRoutesByFullPath {
   '/security/history': typeof AuthenticatedSecurityHistoryRoute
   '/security/reports': typeof AuthenticatedSecurityReportsRoute
   '/security/today': typeof AuthenticatedSecurityTodayRoute
+  '/super-admin/academics': typeof AuthenticatedSuperAdminAcademicsRoute
+  '/super-admin/admins': typeof AuthenticatedSuperAdminAdminsRoute
+  '/super-admin/analytics': typeof AuthenticatedSuperAdminAnalyticsRoute
+  '/super-admin/announcements': typeof AuthenticatedSuperAdminAnnouncementsRoute
+  '/super-admin/audit-log': typeof AuthenticatedSuperAdminAuditLogRoute
+  '/super-admin/billing': typeof AuthenticatedSuperAdminBillingRoute
+  '/super-admin/data': typeof AuthenticatedSuperAdminDataRoute
+  '/super-admin/integrations': typeof AuthenticatedSuperAdminIntegrationsRoute
   '/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRouteWithChildren
+  '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
+  '/super-admin/sms-credits': typeof AuthenticatedSuperAdminSmsCreditsRoute
+  '/super-admin/support': typeof AuthenticatedSuperAdminSupportRoute
+  '/super-admin/system': typeof AuthenticatedSuperAdminSystemRoute
+  '/super-admin/users': typeof AuthenticatedSuperAdminUsersRoute
   '/super-admin/': typeof AuthenticatedSuperAdminIndexRoute
   '/super-admin/schools/$schoolId': typeof AuthenticatedSuperAdminSchoolsSchoolIdRoute
   '/super-admin/schools/new': typeof AuthenticatedSuperAdminSchoolsNewRoute
@@ -523,6 +634,7 @@ export interface FileRoutesByTo {
   '/security': typeof AuthenticatedSecurityRouteWithChildren
   '/select-role': typeof AuthenticatedSelectRoleRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/sms-credits': typeof AuthenticatedSmsCreditsRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/staff-attendance': typeof AuthenticatedStaffAttendanceRoute
   '/student-positions': typeof AuthenticatedStudentPositionsRoute
@@ -532,7 +644,20 @@ export interface FileRoutesByTo {
   '/security/history': typeof AuthenticatedSecurityHistoryRoute
   '/security/reports': typeof AuthenticatedSecurityReportsRoute
   '/security/today': typeof AuthenticatedSecurityTodayRoute
+  '/super-admin/academics': typeof AuthenticatedSuperAdminAcademicsRoute
+  '/super-admin/admins': typeof AuthenticatedSuperAdminAdminsRoute
+  '/super-admin/analytics': typeof AuthenticatedSuperAdminAnalyticsRoute
+  '/super-admin/announcements': typeof AuthenticatedSuperAdminAnnouncementsRoute
+  '/super-admin/audit-log': typeof AuthenticatedSuperAdminAuditLogRoute
+  '/super-admin/billing': typeof AuthenticatedSuperAdminBillingRoute
+  '/super-admin/data': typeof AuthenticatedSuperAdminDataRoute
+  '/super-admin/integrations': typeof AuthenticatedSuperAdminIntegrationsRoute
   '/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRouteWithChildren
+  '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
+  '/super-admin/sms-credits': typeof AuthenticatedSuperAdminSmsCreditsRoute
+  '/super-admin/support': typeof AuthenticatedSuperAdminSupportRoute
+  '/super-admin/system': typeof AuthenticatedSuperAdminSystemRoute
+  '/super-admin/users': typeof AuthenticatedSuperAdminUsersRoute
   '/super-admin': typeof AuthenticatedSuperAdminIndexRoute
   '/super-admin/schools/$schoolId': typeof AuthenticatedSuperAdminSchoolsSchoolIdRoute
   '/super-admin/schools/new': typeof AuthenticatedSuperAdminSchoolsNewRoute
@@ -587,6 +712,7 @@ export interface FileRoutesById {
   '/_authenticated/security': typeof AuthenticatedSecurityRouteWithChildren
   '/_authenticated/select-role': typeof AuthenticatedSelectRoleRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/sms-credits': typeof AuthenticatedSmsCreditsRoute
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
   '/_authenticated/staff-attendance': typeof AuthenticatedStaffAttendanceRoute
   '/_authenticated/student-positions': typeof AuthenticatedStudentPositionsRoute
@@ -597,7 +723,20 @@ export interface FileRoutesById {
   '/_authenticated/security/history': typeof AuthenticatedSecurityHistoryRoute
   '/_authenticated/security/reports': typeof AuthenticatedSecurityReportsRoute
   '/_authenticated/security/today': typeof AuthenticatedSecurityTodayRoute
+  '/_authenticated/super-admin/academics': typeof AuthenticatedSuperAdminAcademicsRoute
+  '/_authenticated/super-admin/admins': typeof AuthenticatedSuperAdminAdminsRoute
+  '/_authenticated/super-admin/analytics': typeof AuthenticatedSuperAdminAnalyticsRoute
+  '/_authenticated/super-admin/announcements': typeof AuthenticatedSuperAdminAnnouncementsRoute
+  '/_authenticated/super-admin/audit-log': typeof AuthenticatedSuperAdminAuditLogRoute
+  '/_authenticated/super-admin/billing': typeof AuthenticatedSuperAdminBillingRoute
+  '/_authenticated/super-admin/data': typeof AuthenticatedSuperAdminDataRoute
+  '/_authenticated/super-admin/integrations': typeof AuthenticatedSuperAdminIntegrationsRoute
   '/_authenticated/super-admin/schools': typeof AuthenticatedSuperAdminSchoolsRouteWithChildren
+  '/_authenticated/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
+  '/_authenticated/super-admin/sms-credits': typeof AuthenticatedSuperAdminSmsCreditsRoute
+  '/_authenticated/super-admin/support': typeof AuthenticatedSuperAdminSupportRoute
+  '/_authenticated/super-admin/system': typeof AuthenticatedSuperAdminSystemRoute
+  '/_authenticated/super-admin/users': typeof AuthenticatedSuperAdminUsersRoute
   '/_authenticated/super-admin/': typeof AuthenticatedSuperAdminIndexRoute
   '/_authenticated/super-admin/schools/$schoolId': typeof AuthenticatedSuperAdminSchoolsSchoolIdRoute
   '/_authenticated/super-admin/schools/new': typeof AuthenticatedSuperAdminSchoolsNewRoute
@@ -652,6 +791,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/select-role'
     | '/settings'
+    | '/sms-credits'
     | '/staff'
     | '/staff-attendance'
     | '/student-positions'
@@ -662,7 +802,20 @@ export interface FileRouteTypes {
     | '/security/history'
     | '/security/reports'
     | '/security/today'
+    | '/super-admin/academics'
+    | '/super-admin/admins'
+    | '/super-admin/analytics'
+    | '/super-admin/announcements'
+    | '/super-admin/audit-log'
+    | '/super-admin/billing'
+    | '/super-admin/data'
+    | '/super-admin/integrations'
     | '/super-admin/schools'
+    | '/super-admin/settings'
+    | '/super-admin/sms-credits'
+    | '/super-admin/support'
+    | '/super-admin/system'
+    | '/super-admin/users'
     | '/super-admin/'
     | '/super-admin/schools/$schoolId'
     | '/super-admin/schools/new'
@@ -715,6 +868,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/select-role'
     | '/settings'
+    | '/sms-credits'
     | '/staff'
     | '/staff-attendance'
     | '/student-positions'
@@ -724,7 +878,20 @@ export interface FileRouteTypes {
     | '/security/history'
     | '/security/reports'
     | '/security/today'
+    | '/super-admin/academics'
+    | '/super-admin/admins'
+    | '/super-admin/analytics'
+    | '/super-admin/announcements'
+    | '/super-admin/audit-log'
+    | '/super-admin/billing'
+    | '/super-admin/data'
+    | '/super-admin/integrations'
     | '/super-admin/schools'
+    | '/super-admin/settings'
+    | '/super-admin/sms-credits'
+    | '/super-admin/support'
+    | '/super-admin/system'
+    | '/super-admin/users'
     | '/super-admin'
     | '/super-admin/schools/$schoolId'
     | '/super-admin/schools/new'
@@ -778,6 +945,7 @@ export interface FileRouteTypes {
     | '/_authenticated/security'
     | '/_authenticated/select-role'
     | '/_authenticated/settings'
+    | '/_authenticated/sms-credits'
     | '/_authenticated/staff'
     | '/_authenticated/staff-attendance'
     | '/_authenticated/student-positions'
@@ -788,7 +956,20 @@ export interface FileRouteTypes {
     | '/_authenticated/security/history'
     | '/_authenticated/security/reports'
     | '/_authenticated/security/today'
+    | '/_authenticated/super-admin/academics'
+    | '/_authenticated/super-admin/admins'
+    | '/_authenticated/super-admin/analytics'
+    | '/_authenticated/super-admin/announcements'
+    | '/_authenticated/super-admin/audit-log'
+    | '/_authenticated/super-admin/billing'
+    | '/_authenticated/super-admin/data'
+    | '/_authenticated/super-admin/integrations'
     | '/_authenticated/super-admin/schools'
+    | '/_authenticated/super-admin/settings'
+    | '/_authenticated/super-admin/sms-credits'
+    | '/_authenticated/super-admin/support'
+    | '/_authenticated/super-admin/system'
+    | '/_authenticated/super-admin/users'
     | '/_authenticated/super-admin/'
     | '/_authenticated/super-admin/schools/$schoolId'
     | '/_authenticated/super-admin/schools/new'
@@ -1140,6 +1321,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sms-credits': {
+      id: '/_authenticated/sms-credits'
+      path: '/sms-credits'
+      fullPath: '/sms-credits'
+      preLoaderRoute: typeof AuthenticatedSmsCreditsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/staff': {
       id: '/_authenticated/staff'
       path: '/staff'
@@ -1217,11 +1405,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuperAdminIndexRouteImport
       parentRoute: typeof AuthenticatedSuperAdminRoute
     }
+    '/_authenticated/super-admin/academics': {
+      id: '/_authenticated/super-admin/academics'
+      path: '/academics'
+      fullPath: '/super-admin/academics'
+      preLoaderRoute: typeof AuthenticatedSuperAdminAcademicsRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/admins': {
+      id: '/_authenticated/super-admin/admins'
+      path: '/admins'
+      fullPath: '/super-admin/admins'
+      preLoaderRoute: typeof AuthenticatedSuperAdminAdminsRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/analytics': {
+      id: '/_authenticated/super-admin/analytics'
+      path: '/analytics'
+      fullPath: '/super-admin/analytics'
+      preLoaderRoute: typeof AuthenticatedSuperAdminAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/announcements': {
+      id: '/_authenticated/super-admin/announcements'
+      path: '/announcements'
+      fullPath: '/super-admin/announcements'
+      preLoaderRoute: typeof AuthenticatedSuperAdminAnnouncementsRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/audit-log': {
+      id: '/_authenticated/super-admin/audit-log'
+      path: '/audit-log'
+      fullPath: '/super-admin/audit-log'
+      preLoaderRoute: typeof AuthenticatedSuperAdminAuditLogRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/billing': {
+      id: '/_authenticated/super-admin/billing'
+      path: '/billing'
+      fullPath: '/super-admin/billing'
+      preLoaderRoute: typeof AuthenticatedSuperAdminBillingRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/data': {
+      id: '/_authenticated/super-admin/data'
+      path: '/data'
+      fullPath: '/super-admin/data'
+      preLoaderRoute: typeof AuthenticatedSuperAdminDataRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/integrations': {
+      id: '/_authenticated/super-admin/integrations'
+      path: '/integrations'
+      fullPath: '/super-admin/integrations'
+      preLoaderRoute: typeof AuthenticatedSuperAdminIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
     '/_authenticated/super-admin/schools': {
       id: '/_authenticated/super-admin/schools'
       path: '/schools'
       fullPath: '/super-admin/schools'
       preLoaderRoute: typeof AuthenticatedSuperAdminSchoolsRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/settings': {
+      id: '/_authenticated/super-admin/settings'
+      path: '/settings'
+      fullPath: '/super-admin/settings'
+      preLoaderRoute: typeof AuthenticatedSuperAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/sms-credits': {
+      id: '/_authenticated/super-admin/sms-credits'
+      path: '/sms-credits'
+      fullPath: '/super-admin/sms-credits'
+      preLoaderRoute: typeof AuthenticatedSuperAdminSmsCreditsRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/support': {
+      id: '/_authenticated/super-admin/support'
+      path: '/support'
+      fullPath: '/super-admin/support'
+      preLoaderRoute: typeof AuthenticatedSuperAdminSupportRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/system': {
+      id: '/_authenticated/super-admin/system'
+      path: '/system'
+      fullPath: '/super-admin/system'
+      preLoaderRoute: typeof AuthenticatedSuperAdminSystemRouteImport
+      parentRoute: typeof AuthenticatedSuperAdminRoute
+    }
+    '/_authenticated/super-admin/users': {
+      id: '/_authenticated/super-admin/users'
+      path: '/users'
+      fullPath: '/super-admin/users'
+      preLoaderRoute: typeof AuthenticatedSuperAdminUsersRouteImport
       parentRoute: typeof AuthenticatedSuperAdminRoute
     }
     '/_authenticated/super-admin/schools/$schoolId': {
@@ -1290,14 +1569,45 @@ const AuthenticatedSuperAdminSchoolsRouteWithChildren =
   )
 
 interface AuthenticatedSuperAdminRouteChildren {
+  AuthenticatedSuperAdminAcademicsRoute: typeof AuthenticatedSuperAdminAcademicsRoute
+  AuthenticatedSuperAdminAdminsRoute: typeof AuthenticatedSuperAdminAdminsRoute
+  AuthenticatedSuperAdminAnalyticsRoute: typeof AuthenticatedSuperAdminAnalyticsRoute
+  AuthenticatedSuperAdminAnnouncementsRoute: typeof AuthenticatedSuperAdminAnnouncementsRoute
+  AuthenticatedSuperAdminAuditLogRoute: typeof AuthenticatedSuperAdminAuditLogRoute
+  AuthenticatedSuperAdminBillingRoute: typeof AuthenticatedSuperAdminBillingRoute
+  AuthenticatedSuperAdminDataRoute: typeof AuthenticatedSuperAdminDataRoute
+  AuthenticatedSuperAdminIntegrationsRoute: typeof AuthenticatedSuperAdminIntegrationsRoute
   AuthenticatedSuperAdminSchoolsRoute: typeof AuthenticatedSuperAdminSchoolsRouteWithChildren
+  AuthenticatedSuperAdminSettingsRoute: typeof AuthenticatedSuperAdminSettingsRoute
+  AuthenticatedSuperAdminSmsCreditsRoute: typeof AuthenticatedSuperAdminSmsCreditsRoute
+  AuthenticatedSuperAdminSupportRoute: typeof AuthenticatedSuperAdminSupportRoute
+  AuthenticatedSuperAdminSystemRoute: typeof AuthenticatedSuperAdminSystemRoute
+  AuthenticatedSuperAdminUsersRoute: typeof AuthenticatedSuperAdminUsersRoute
   AuthenticatedSuperAdminIndexRoute: typeof AuthenticatedSuperAdminIndexRoute
 }
 
 const AuthenticatedSuperAdminRouteChildren: AuthenticatedSuperAdminRouteChildren =
   {
+    AuthenticatedSuperAdminAcademicsRoute:
+      AuthenticatedSuperAdminAcademicsRoute,
+    AuthenticatedSuperAdminAdminsRoute: AuthenticatedSuperAdminAdminsRoute,
+    AuthenticatedSuperAdminAnalyticsRoute:
+      AuthenticatedSuperAdminAnalyticsRoute,
+    AuthenticatedSuperAdminAnnouncementsRoute:
+      AuthenticatedSuperAdminAnnouncementsRoute,
+    AuthenticatedSuperAdminAuditLogRoute: AuthenticatedSuperAdminAuditLogRoute,
+    AuthenticatedSuperAdminBillingRoute: AuthenticatedSuperAdminBillingRoute,
+    AuthenticatedSuperAdminDataRoute: AuthenticatedSuperAdminDataRoute,
+    AuthenticatedSuperAdminIntegrationsRoute:
+      AuthenticatedSuperAdminIntegrationsRoute,
     AuthenticatedSuperAdminSchoolsRoute:
       AuthenticatedSuperAdminSchoolsRouteWithChildren,
+    AuthenticatedSuperAdminSettingsRoute: AuthenticatedSuperAdminSettingsRoute,
+    AuthenticatedSuperAdminSmsCreditsRoute:
+      AuthenticatedSuperAdminSmsCreditsRoute,
+    AuthenticatedSuperAdminSupportRoute: AuthenticatedSuperAdminSupportRoute,
+    AuthenticatedSuperAdminSystemRoute: AuthenticatedSuperAdminSystemRoute,
+    AuthenticatedSuperAdminUsersRoute: AuthenticatedSuperAdminUsersRoute,
     AuthenticatedSuperAdminIndexRoute: AuthenticatedSuperAdminIndexRoute,
   }
 
@@ -1350,6 +1660,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSecurityRoute: typeof AuthenticatedSecurityRouteWithChildren
   AuthenticatedSelectRoleRoute: typeof AuthenticatedSelectRoleRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSmsCreditsRoute: typeof AuthenticatedSmsCreditsRoute
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
   AuthenticatedStaffAttendanceRoute: typeof AuthenticatedStaffAttendanceRoute
   AuthenticatedStudentPositionsRoute: typeof AuthenticatedStudentPositionsRoute
@@ -1404,6 +1715,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSecurityRoute: AuthenticatedSecurityRouteWithChildren,
   AuthenticatedSelectRoleRoute: AuthenticatedSelectRoleRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSmsCreditsRoute: AuthenticatedSmsCreditsRoute,
   AuthenticatedStaffRoute: AuthenticatedStaffRoute,
   AuthenticatedStaffAttendanceRoute: AuthenticatedStaffAttendanceRoute,
   AuthenticatedStudentPositionsRoute: AuthenticatedStudentPositionsRoute,

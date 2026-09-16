@@ -661,6 +661,9 @@ body * {
   .auth-role-green::before {
     background: #16a34a;
   }
+  .auth-role-emerald::before {
+    background: #059669;
+  }
   .auth-role-purple::before {
     background: #7c3aed;
   }
@@ -671,6 +674,10 @@ body * {
   .auth-role-green .auth-role-icon {
     background: #e7f8ed;
     color: #16a34a;
+  }
+  .auth-role-emerald .auth-role-icon {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
   }
   .auth-role-purple .auth-role-icon {
     background: #f0eaff;
